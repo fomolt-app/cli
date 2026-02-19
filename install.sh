@@ -44,20 +44,49 @@ fi
 # Get latest release URL
 echo "Fetching latest release..."
 RELEASE_URL="https://github.com/${REPO}/releases/latest/download/${BINARY}"
+CHECKSUM_URL="https://github.com/${REPO}/releases/latest/download/checksums.txt"
 
-# Download
+# Download binary and checksums
 TMPFILE="$(mktemp)"
-trap 'rm -f "$TMPFILE"' EXIT
+TMPCHECKSUM="$(mktemp)"
+trap 'rm -f "$TMPFILE" "$TMPCHECKSUM"' EXIT
 
 echo "Downloading ${BINARY}..."
 if command -v curl >/dev/null 2>&1; then
   curl -fsSL "$RELEASE_URL" -o "$TMPFILE"
+  curl -fsSL "$CHECKSUM_URL" -o "$TMPCHECKSUM"
 elif command -v wget >/dev/null 2>&1; then
   wget -qO "$TMPFILE" "$RELEASE_URL"
+  wget -qO "$TMPCHECKSUM" "$CHECKSUM_URL"
 else
   echo "Error: curl or wget required" >&2
   exit 1
 fi
+
+# Verify checksum
+echo "Verifying checksum..."
+EXPECTED_HASH="$(grep "  ${BINARY}$" "$TMPCHECKSUM" | cut -d' ' -f1)"
+if [ -z "$EXPECTED_HASH" ]; then
+  echo "Error: checksum not found for ${BINARY}" >&2
+  exit 1
+fi
+
+if command -v sha256sum >/dev/null 2>&1; then
+  ACTUAL_HASH="$(sha256sum "$TMPFILE" | cut -d' ' -f1)"
+elif command -v shasum >/dev/null 2>&1; then
+  ACTUAL_HASH="$(shasum -a 256 "$TMPFILE" | cut -d' ' -f1)"
+else
+  echo "Warning: sha256sum/shasum not found, skipping checksum verification" >&2
+  ACTUAL_HASH="$EXPECTED_HASH"
+fi
+
+if [ "$ACTUAL_HASH" != "$EXPECTED_HASH" ]; then
+  echo "Error: checksum mismatch!" >&2
+  echo "  Expected: ${EXPECTED_HASH}" >&2
+  echo "  Actual:   ${ACTUAL_HASH}" >&2
+  exit 1
+fi
+echo "Checksum verified."
 
 # Install
 chmod +x "$TMPFILE"

@@ -15,7 +15,7 @@ const program = new Command("fomolt")
   .version("1.1.0")
   .description("Fomolt CLI — agentic trading on Base")
   .option("--api-url <url>", "Override API base URL")
-  .option("--api-key <key>", "Override stored API key");
+  .option("--api-key <key>", "Override stored API key (use - to read from stdin)");
 
 async function showStatus() {
   const creds = await loadCredentials();
@@ -43,11 +43,22 @@ async function showStatus() {
 async function main() {
   const storedConfig = await loadConfig();
 
+  // Read API key from stdin if "--api-key -" is passed (avoids exposing key in process args)
+  const apiKeyArgIdx = process.argv.indexOf("--api-key");
+  let stdinApiKey: string | undefined;
+  if (apiKeyArgIdx !== -1 && process.argv[apiKeyArgIdx + 1] === "-") {
+    stdinApiKey = (await Bun.stdin.text()).trim();
+    if (!stdinApiKey) {
+      error("No API key provided on stdin", "VALIDATION_ERROR");
+      process.exit(1);
+    }
+  }
+
   function getContext(): CmdContext {
     const opts = program.opts();
     return {
       apiUrl: opts.apiUrl ?? storedConfig.apiUrl ?? "https://fomolt.com",
-      apiKey: opts.apiKey,
+      apiKey: stdinApiKey ?? (opts.apiKey !== "-" ? opts.apiKey : undefined),
     };
   }
 
