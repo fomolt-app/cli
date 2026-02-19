@@ -70,4 +70,5 @@ export async function saveConfig(
   mkdirSync(dir, { recursive: true });
   const path = join(dir, "config.json");
   await Bun.write(path, JSON.stringify(config, null, 2) + "\n");
+  chmodSync(path, 0o600);
 }

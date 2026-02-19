@@ -74,11 +74,15 @@ export class FomoltClient {
 
     let res: Response;
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30_000);
       res = await fetch(url, {
         method: init.method,
         headers,
         body: init.body,
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
     } catch (err: any) {
       throw new ApiError({
         message: `Network error: ${err.message}`,
