@@ -1,4 +1,7 @@
 import { test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { tmpdir } from "os";
+import { join } from "path";
+import { mkdirSync, rmSync, writeFileSync, existsSync } from "fs";
 
 let stdout: string[] = [];
 let stderr: string[] = [];
@@ -79,6 +82,34 @@ test("update check reports no update when on newer version", async () => {
   const output = JSON.parse(stdout.join(""));
   expect(output.ok).toBe(true);
   expect(output.data.updateAvailable).toBe(false);
+});
+
+test("uninstall removes binary and reports success", async () => {
+  // Create a fake binary to uninstall
+  const testDir = join(
+    tmpdir(),
+    `fomolt-uninstall-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
+  mkdirSync(testDir, { recursive: true });
+  const fakeBin = join(testDir, "fomolt");
+  writeFileSync(fakeBin, "fake");
+
+  // Mock process.execPath to point at our fake binary
+  const originalExecPath = process.execPath;
+  Object.defineProperty(process, "execPath", { value: fakeBin, writable: true });
+
+  const { handleUninstall } = await import("../../src/commands/update");
+  await handleUninstall({ purge: false });
+
+  Object.defineProperty(process, "execPath", { value: originalExecPath, writable: true });
+
+  const output = JSON.parse(stdout.join(""));
+  expect(output.ok).toBe(true);
+  expect(output.data.removed).toContain(fakeBin);
+  expect(output.data.purged).toBe(false);
+  expect(existsSync(fakeBin)).toBe(false);
+
+  rmSync(testDir, { recursive: true, force: true });
 });
 
 test("update apply reports already up to date", async () => {
