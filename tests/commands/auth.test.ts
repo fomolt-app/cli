@@ -140,7 +140,7 @@ test("auth recover with --name sends correct request", async () => {
   expect(output.data.apiKey).toBe("new-key");
 });
 
-test("auth import validates key and saves credentials", async () => {
+test("auth import validates key and saves credentials with name from API", async () => {
   globalThis.fetch = mock(() =>
     Promise.resolve(
       new Response(
@@ -165,7 +165,7 @@ test("auth import validates key and saves credentials", async () => {
 
   const { handleImport } = await import("../../src/commands/auth");
   await handleImport(
-    { apiKey: "existing-key", name: "imported_agent" },
+    { apiKey: "existing-key" },
     { apiUrl: "https://fomolt.test", configDir: testDir }
   );
 

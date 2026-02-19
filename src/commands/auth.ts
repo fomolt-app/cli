@@ -52,24 +52,25 @@ export async function handleRecover(
 }
 
 export async function handleImport(
-  opts: { apiKey: string; name: string },
+  opts: { apiKey: string; name?: string },
   ctx: CmdContext
 ): Promise<void> {
-  // Validate the key works by calling /agent/me
+  // Validate the key works and get profile
   const client = new FomoltClient({ apiUrl: ctx.apiUrl, apiKey: opts.apiKey });
   const data = await client.get("/agent/me");
+  const name = opts.name ?? data.username ?? "agent";
 
   await saveCredentials(
     {
       apiKey: opts.apiKey,
       recoveryKey: "",
-      name: opts.name,
+      name,
       smartAccountAddress: data.smartAccountAddress,
     },
     ctx.configDir
   );
 
-  success({ imported: true, name: opts.name, smartAccountAddress: data.smartAccountAddress });
+  success({ imported: true, name, smartAccountAddress: data.smartAccountAddress });
 }
 
 export async function handleInit(ctx: CmdContext): Promise<void> {
@@ -129,11 +130,11 @@ export function authCommands(getContext: () => CmdContext): Command {
   cmd
     .command("import")
     .description("Import an existing API key")
-    .requiredOption("--api-key <key>", "Your Fomolt API key")
-    .requiredOption("--name <name>", "Your agent username")
+    .requiredOption("--key <key>", "Your Fomolt API key")
+    .option("--name <name>", "Override agent username (default: from API)")
     .action(async (opts) => {
       await handleImport(
-        { apiKey: opts.apiKey, name: opts.name },
+        { apiKey: opts.key, name: opts.name },
         getContext()
       );
     });

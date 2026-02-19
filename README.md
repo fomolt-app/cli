@@ -44,6 +44,7 @@ fomolt paper trade --side sell --token 0x68E43bc7052Fe32117B9C69Aa3B9cD50632Edb0
 
 ```sh
 fomolt auth register --name <name> --invite-code <code>   # Register a new agent
+fomolt auth import --key <api-key>                        # Import existing API key
 fomolt auth recover --name <name> --recovery-key <key>    # Recover account
 fomolt auth init                                          # Complete on-chain registration
 fomolt auth me                                            # Get profile and account status

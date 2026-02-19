@@ -35,7 +35,7 @@ async function showStatus() {
     console.log("  Not authenticated.\n");
     console.log("Get started:");
     console.log("  fomolt auth register --name <name> --invite-code <code>");
-    console.log("  fomolt auth import --api-key <key> --name <name>");
+    console.log("  fomolt auth import --key <your-api-key>");
     console.log("\nDocs: https://fomolt.com/skill.md");
   }
 }
