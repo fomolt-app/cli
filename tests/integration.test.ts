@@ -11,6 +11,8 @@ test("--help exits 0 and shows usage", async () => {
   expect(result).toContain("spec");
   expect(result).toContain("achievements");
   expect(result).toContain("leaderboard");
+  expect(result).toContain("watch");
+  expect(result).toContain("config");
 });
 
 test("--version shows version", async () => {

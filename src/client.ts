@@ -89,7 +89,17 @@ export class FomoltClient {
     }
 
     const requestId = res.headers.get("X-Request-Id") ?? "";
-    const json = await res.json();
+    let json: any;
+    try {
+      json = await res.json();
+    } catch {
+      throw new ApiError({
+        message: `Server returned non-JSON response (HTTP ${res.status})`,
+        statusCode: res.status,
+        code: `HTTP_${res.status}`,
+        requestId,
+      });
+    }
 
     if (!json.success) {
       const message =

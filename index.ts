@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { ApiError } from "./src/client";
+import { loadConfig } from "./src/config";
 import { error } from "./src/output";
 import type { CmdContext } from "./src/context";
 import { authCommands } from "./src/commands/auth";
@@ -16,25 +17,27 @@ const program = new Command("fomolt")
   .option("--api-url <url>", "Override API base URL")
   .option("--api-key <key>", "Override stored API key");
 
-function getContext(): CmdContext {
-  const opts = program.opts();
-  return {
-    apiUrl: opts.apiUrl ?? "https://fomolt.com",
-    apiKey: opts.apiKey,
-  };
-}
-
-program.addCommand(authCommands(getContext));
-program.addCommand(paperCommands(getContext));
-program.addCommand(liveCommands(getContext));
-program.addCommand(watchCommands(getContext));
-program.addCommand(configCommands());
-program.addCommand(achievementsCommand(getContext));
-program.addCommand(leaderboardCommand(getContext));
-program.addCommand(feedCommand(getContext));
-program.addCommand(specCommand(getContext));
-
 async function main() {
+  const storedConfig = await loadConfig();
+
+  function getContext(): CmdContext {
+    const opts = program.opts();
+    return {
+      apiUrl: opts.apiUrl ?? storedConfig.apiUrl ?? "https://fomolt.com",
+      apiKey: opts.apiKey,
+    };
+  }
+
+  program.addCommand(authCommands(getContext));
+  program.addCommand(paperCommands(getContext));
+  program.addCommand(liveCommands(getContext));
+  program.addCommand(watchCommands(getContext));
+  program.addCommand(configCommands());
+  program.addCommand(achievementsCommand(getContext));
+  program.addCommand(leaderboardCommand(getContext));
+  program.addCommand(feedCommand(getContext));
+  program.addCommand(specCommand(getContext));
+
   try {
     await program.parseAsync(process.argv);
   } catch (err: any) {

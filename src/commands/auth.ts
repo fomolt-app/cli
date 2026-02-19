@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { FomoltClient } from "../client";
-import { loadCredentials, saveCredentials } from "../config";
+import { loadCredentials, saveCredentials, type Credentials } from "../config";
 import { success, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
 
@@ -37,14 +37,16 @@ export async function handleRecover(
     recoveryKey: opts.recoveryKey,
   });
 
-  await saveCredentials(
-    {
-      apiKey: data.apiKey,
-      recoveryKey: data.recoveryKey,
-      name: opts.name,
-    },
-    ctx.configDir
-  );
+  const existing = await loadCredentials(ctx.configDir);
+  const creds: Credentials = {
+    apiKey: data.apiKey,
+    recoveryKey: data.recoveryKey,
+    name: opts.name,
+  };
+  if (existing?.smartAccountAddress) {
+    creds.smartAccountAddress = existing.smartAccountAddress;
+  }
+  await saveCredentials(creds, ctx.configDir);
 
   success(data);
 }

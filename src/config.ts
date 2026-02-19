@@ -1,5 +1,5 @@
 import { join } from "path";
-import { mkdirSync, existsSync, chmodSync } from "fs";
+import { mkdirSync, chmodSync } from "fs";
 import { homedir } from "os";
 
 export interface Credentials {

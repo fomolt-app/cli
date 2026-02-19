@@ -117,7 +117,15 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .option("--sort <order>", "Sort order (asc/desc)")
     .action(async (opts) =>
       handlePaperTrades(
-        { ...opts, contractAddress: opts.token, startDate: opts.startDate, endDate: opts.endDate },
+        {
+          cursor: opts.cursor,
+          limit: opts.limit,
+          contractAddress: opts.token,
+          side: opts.side,
+          startDate: opts.startDate,
+          endDate: opts.endDate,
+          sort: opts.sort,
+        },
         getContext()
       )
     );

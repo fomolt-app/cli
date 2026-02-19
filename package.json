@@ -2,6 +2,9 @@
   "name": "fomolt-cli",
   "module": "index.ts",
   "type": "module",
+  "bin": {
+    "fomolt": "index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
