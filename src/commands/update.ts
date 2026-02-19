@@ -1,4 +1,7 @@
 import { Command } from "commander";
+import { unlinkSync, rmSync, existsSync } from "fs";
+import { join } from "path";
+import { homedir } from "os";
 import { success, error } from "../output";
 
 const REPO = "fomolt-app/cli";
@@ -122,6 +125,32 @@ export async function handleUpdate(): Promise<void> {
   });
 }
 
+export async function handleUninstall(opts: { purge?: boolean }): Promise<void> {
+  const removed: string[] = [];
+
+  // Remove the binary
+  const execPath = process.execPath;
+  if (existsSync(execPath)) {
+    unlinkSync(execPath);
+    removed.push(execPath);
+  }
+
+  // Remove credentials and config if --purge
+  if (opts.purge) {
+    const configDir = join(homedir(), ".config", "fomolt", "cli");
+    if (existsSync(configDir)) {
+      rmSync(configDir, { recursive: true, force: true });
+      removed.push(configDir);
+    }
+  }
+
+  success({
+    message: "Fomolt CLI uninstalled",
+    removed,
+    purged: opts.purge ?? false,
+  });
+}
+
 export function updateCommands(): Command {
   const cmd = new Command("update").description("Check for and install updates");
 
@@ -134,6 +163,12 @@ export function updateCommands(): Command {
     .command("apply")
     .description("Download and install the latest version")
     .action(async () => handleUpdate());
+
+  cmd
+    .command("uninstall")
+    .description("Remove fomolt binary (--purge to also delete credentials)")
+    .option("--purge", "Also remove stored credentials and config")
+    .action(async (opts) => handleUninstall(opts));
 
   // Default: check
   cmd.action(async () => handleCheck());
