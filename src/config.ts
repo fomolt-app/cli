@@ -22,7 +22,28 @@ export async function loadCredentials(
   const path = join(dir, "credentials.json");
   const file = Bun.file(path);
   if (!(await file.exists())) return null;
-  return (await file.json()) as Credentials;
+  const data = await file.json();
+
+  // Current format: { apiKey, recoveryKey, name, ... }
+  if (data.apiKey && data.name) {
+    return data as Credentials;
+  }
+
+  // Legacy format: { agentName: { apiKey, username, ... } }
+  const keys = Object.keys(data);
+  if (keys.length === 1 && typeof data[keys[0]] === "object") {
+    const legacy = data[keys[0]];
+    if (legacy.apiKey) {
+      return {
+        apiKey: legacy.apiKey,
+        recoveryKey: legacy.recoveryKey ?? "",
+        name: legacy.username ?? keys[0],
+        smartAccountAddress: legacy.smartAccountAddress,
+      };
+    }
+  }
+
+  return null;
 }
 
 export async function saveCredentials(

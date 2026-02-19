@@ -139,3 +139,45 @@ test("auth recover with --name sends correct request", async () => {
   expect(output.ok).toBe(true);
   expect(output.data.apiKey).toBe("new-key");
 });
+
+test("auth import validates key and saves credentials", async () => {
+  globalThis.fetch = mock(() =>
+    Promise.resolve(
+      new Response(
+        JSON.stringify({
+          success: true,
+          response: {
+            username: "imported_agent",
+            smartAccountAddress: "0xdef",
+            usdcBalance: "500",
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": "r4",
+          },
+        }
+      )
+    )
+  ) as any;
+
+  const { handleImport } = await import("../../src/commands/auth");
+  await handleImport(
+    { apiKey: "existing-key", name: "imported_agent" },
+    { apiUrl: "https://fomolt.test", configDir: testDir }
+  );
+
+  const output = JSON.parse(stdout.join(""));
+  expect(output.ok).toBe(true);
+  expect(output.data.imported).toBe(true);
+  expect(output.data.name).toBe("imported_agent");
+
+  const { loadCredentials } = await import("../../src/config");
+  const creds = await loadCredentials(testDir);
+  expect(creds).not.toBeNull();
+  expect(creds!.apiKey).toBe("existing-key");
+  expect(creds!.name).toBe("imported_agent");
+  expect(creds!.smartAccountAddress).toBe("0xdef");
+});

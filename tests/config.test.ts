@@ -53,6 +53,30 @@ test("loadConfig returns empty object when no file exists", async () => {
   expect(loaded).toEqual({});
 });
 
+test("loadCredentials reads legacy nested format", async () => {
+  const legacy = {
+    driftwood: {
+      apiKey: "fml_legacy_key",
+      username: "driftwood",
+      recoveryKey: "rec_legacy",
+    },
+  };
+  const path = join(testDir, "credentials.json");
+  await Bun.write(path, JSON.stringify(legacy));
+  const loaded = await loadCredentials(testDir);
+  expect(loaded).not.toBeNull();
+  expect(loaded!.apiKey).toBe("fml_legacy_key");
+  expect(loaded!.name).toBe("driftwood");
+  expect(loaded!.recoveryKey).toBe("rec_legacy");
+});
+
+test("loadCredentials returns null for unrecognized format", async () => {
+  const path = join(testDir, "credentials.json");
+  await Bun.write(path, JSON.stringify({ random: "stuff", foo: "bar" }));
+  const loaded = await loadCredentials(testDir);
+  expect(loaded).toBeNull();
+});
+
 test("credentials file has restricted permissions", async () => {
   await saveCredentials(
     { apiKey: "k", recoveryKey: "r", name: "n" },

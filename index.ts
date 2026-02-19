@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { ApiError } from "./src/client";
-import { loadConfig } from "./src/config";
+import { loadConfig, loadCredentials } from "./src/config";
 import { error } from "./src/output";
 import type { CmdContext } from "./src/context";
 import { authCommands } from "./src/commands/auth";
@@ -17,6 +17,29 @@ const program = new Command("fomolt")
   .option("--api-url <url>", "Override API base URL")
   .option("--api-key <key>", "Override stored API key");
 
+async function showStatus() {
+  const creds = await loadCredentials();
+  console.log("Fomolt CLI v1.0.0\n");
+  if (creds?.apiKey && creds?.name) {
+    console.log(`  Authenticated as: ${creds.name}`);
+    if (creds.smartAccountAddress) {
+      console.log(`  Smart account:    ${creds.smartAccountAddress}`);
+    }
+    console.log("\nCommands:");
+    console.log("  fomolt paper portfolio           Check paper positions");
+    console.log("  fomolt paper trade --help         Place a paper trade");
+    console.log("  fomolt live balance               Check live balances");
+    console.log("  fomolt auth me                    View full profile");
+    console.log("  fomolt --help                     All commands");
+  } else {
+    console.log("  Not authenticated.\n");
+    console.log("Get started:");
+    console.log("  fomolt auth register --name <name> --invite-code <code>");
+    console.log("  fomolt auth import --api-key <key> --name <name>");
+    console.log("\nDocs: https://fomolt.com/skill.md");
+  }
+}
+
 async function main() {
   const storedConfig = await loadConfig();
 
@@ -27,6 +50,11 @@ async function main() {
       apiKey: opts.apiKey,
     };
   }
+
+  // Default action when no subcommand is given
+  program.action(async () => {
+    await showStatus();
+  });
 
   program.addCommand(authCommands(getContext));
   program.addCommand(paperCommands(getContext));

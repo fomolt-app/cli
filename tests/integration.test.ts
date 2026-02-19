@@ -24,6 +24,7 @@ test("auth --help shows subcommands", async () => {
   const result = await $`bun run index.ts auth --help`.text();
   expect(result).toContain("register");
   expect(result).toContain("recover");
+  expect(result).toContain("import");
   expect(result).toContain("init");
   expect(result).toContain("me");
   expect(result).toContain("update");
@@ -38,12 +39,15 @@ test("paper trade --help shows --usdc and --quantity flags", async () => {
 });
 
 test("auth me without credentials outputs JSON error", async () => {
+  const tmpHome = `${require("os").tmpdir()}/fomolt-int-test-${Date.now()}`;
+  require("fs").mkdirSync(tmpHome, { recursive: true });
   const proc = Bun.spawn(
     ["bun", "run", "index.ts", "auth", "me", "--api-url", "https://fomolt.test"],
-    { stdout: "pipe", stderr: "pipe" }
+    { stdout: "pipe", stderr: "pipe", env: { ...process.env, HOME: tmpHome } }
   );
   const stderr = await new Response(proc.stderr).text();
   const exitCode = await proc.exited;
+  require("fs").rmSync(tmpHome, { recursive: true, force: true });
 
   expect(exitCode).toBe(1);
   const output = JSON.parse(stderr.trim());

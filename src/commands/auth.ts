@@ -51,6 +51,27 @@ export async function handleRecover(
   success(data);
 }
 
+export async function handleImport(
+  opts: { apiKey: string; name: string },
+  ctx: CmdContext
+): Promise<void> {
+  // Validate the key works by calling /agent/me
+  const client = new FomoltClient({ apiUrl: ctx.apiUrl, apiKey: opts.apiKey });
+  const data = await client.get("/agent/me");
+
+  await saveCredentials(
+    {
+      apiKey: opts.apiKey,
+      recoveryKey: "",
+      name: opts.name,
+      smartAccountAddress: data.smartAccountAddress,
+    },
+    ctx.configDir
+  );
+
+  success({ imported: true, name: opts.name, smartAccountAddress: data.smartAccountAddress });
+}
+
 export async function handleInit(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
   const data = await client.post("/agent/init");
@@ -101,6 +122,18 @@ export function authCommands(getContext: () => CmdContext): Command {
     .action(async (opts) => {
       await handleRecover(
         { name: opts.name, recoveryKey: opts.recoveryKey },
+        getContext()
+      );
+    });
+
+  cmd
+    .command("import")
+    .description("Import an existing API key")
+    .requiredOption("--api-key <key>", "Your Fomolt API key")
+    .requiredOption("--name <name>", "Your agent username")
+    .action(async (opts) => {
+      await handleImport(
+        { apiKey: opts.apiKey, name: opts.name },
         getContext()
       );
     });
