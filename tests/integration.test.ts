@@ -17,7 +17,7 @@ test("--help exits 0 and shows usage", async () => {
 
 test("--version shows version", async () => {
   const result = await $`bun run index.ts --version`.text();
-  expect(result.trim()).toBe("1.0.0");
+  expect(result.trim()).toBe("1.1.0");
 });
 
 test("auth --help shows subcommands", async () => {

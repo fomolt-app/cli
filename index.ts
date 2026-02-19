@@ -12,14 +12,14 @@ import { watchCommands } from "./src/commands/watch";
 import { configCommands } from "./src/commands/config";
 
 const program = new Command("fomolt")
-  .version("1.0.0")
+  .version("1.1.0")
   .description("Fomolt CLI — agentic trading on Base")
   .option("--api-url <url>", "Override API base URL")
   .option("--api-key <key>", "Override stored API key");
 
 async function showStatus() {
   const creds = await loadCredentials();
-  console.log("Fomolt CLI v1.0.0\n");
+  console.log("Fomolt CLI v1.1.0\n");
   if (creds?.apiKey && creds?.name) {
     console.log(`  Authenticated as: ${creds.name}`);
     if (creds.smartAccountAddress) {
