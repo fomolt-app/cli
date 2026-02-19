@@ -10,6 +10,7 @@ import { achievementsCommand, leaderboardCommand } from "./src/commands/social";
 import { feedCommand, specCommand } from "./src/commands/feed";
 import { watchCommands } from "./src/commands/watch";
 import { configCommands } from "./src/commands/config";
+import { updateCommands } from "./src/commands/update";
 
 const program = new Command("fomolt")
   .version("1.1.0")
@@ -76,6 +77,7 @@ async function main() {
   program.addCommand(leaderboardCommand(getContext));
   program.addCommand(feedCommand(getContext));
   program.addCommand(specCommand(getContext));
+  program.addCommand(updateCommands());
 
   try {
     await program.parseAsync(process.argv);
