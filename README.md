@@ -128,7 +128,7 @@ All output is JSON. Success goes to stdout, errors to stderr.
 
 ## Credentials
 
-Stored at `~/.config/fomolt/credentials.json` with `0600` permissions. Set automatically on `auth register` and `auth recover`.
+Stored at `~/.config/fomolt/cli/credentials.json` with `0600` permissions. Set automatically on `auth register`, `auth recover`, and `auth import`.
 
 ## API Docs
 

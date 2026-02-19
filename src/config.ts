@@ -14,7 +14,7 @@ export interface Config {
   [key: string]: string | undefined;
 }
 
-const DEFAULT_DIR = join(homedir(), ".config", "fomolt");
+const DEFAULT_DIR = join(homedir(), ".config", "fomolt", "cli");
 
 export async function loadCredentials(
   dir = DEFAULT_DIR
