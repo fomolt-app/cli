@@ -57,7 +57,12 @@ async function fetchLatestRelease(): Promise<ReleaseInfo> {
 
 export async function handleCheck(): Promise<void> {
   const info = await fetchLatestRelease();
-  success(info);
+  success({
+    ...info,
+    message: info.updateAvailable
+      ? `Update available: ${info.version}. Run "fomolt update apply" to install.`
+      : "Already up to date.",
+  });
 }
 
 export async function handleUpdate(): Promise<void> {
