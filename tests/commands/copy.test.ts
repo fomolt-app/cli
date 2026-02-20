@@ -291,6 +291,35 @@ test("--max-usdc does not cap when amount is under the limit", async () => {
   expect(mirrorBody.amountUsdc).toBe("30");
 });
 
+test("buy uses totalUsdc field as primary source", async () => {
+  let callCount = 0;
+  const mockFetch = mock(() => {
+    callCount++;
+    if (callCount === 1) {
+      return Promise.resolve(
+        apiResponse({
+          trades: [
+            { id: "t6", side: "buy", contractAddress: "0xabc", totalUsdc: "150" },
+            { id: "t5", side: "buy", contractAddress: "0xold", totalUsdc: "10" },
+          ],
+        })
+      );
+    }
+    return Promise.resolve(apiResponse({ tradeId: "my-t1" }));
+  });
+  globalThis.fetch = mockFetch as any;
+  const { copyAgent } = await import("../../src/commands/copy");
+  await copyAgent(
+    "target-agent",
+    { market: "paper" },
+    { apiUrl: "https://fomolt.test", apiKey: "k" },
+    { once: true, initialCursor: "t5" }
+  );
+
+  const mirrorBody = JSON.parse(mockFetch.mock.calls[1][1].body);
+  expect(mirrorBody.amountUsdc).toBe("150");
+});
+
 test("buy uses amount field as fallback when amountUsdc is missing", async () => {
   let callCount = 0;
   const mockFetch = mock(() => {
@@ -440,134 +469,6 @@ test("copy encodes special characters in agent name", async () => {
 
   const url: string = mockFetch.mock.calls[0][0];
   expect(url).toContain("/agent/agent%2Fspecial%20name/trades");
-});
-
-// --- Validation tests ---
-
-test("--market rejects invalid values", async () => {
-  const originalExit = process.exit;
-  process.exit = ((code: number) => { throw new Error(`EXIT_${code}`); }) as any;
-  try {
-    const { copyAgent } = await import("../../src/commands/copy");
-    await copyAgent(
-      "x",
-      { market: "foo" },
-      { apiUrl: "https://fomolt.test", apiKey: "k" },
-      { once: true }
-    );
-    expect.unreachable("should have exited");
-  } catch (e: any) {
-    expect(e.message).toBe("EXIT_1");
-  }
-  process.exit = originalExit;
-  const output = JSON.parse(stderr.join(""));
-  expect(output.code).toBe("VALIDATION_ERROR");
-  expect(output.error).toContain("--market");
-});
-
-test("--interval rejects zero", async () => {
-  const originalExit = process.exit;
-  process.exit = ((code: number) => { throw new Error(`EXIT_${code}`); }) as any;
-  try {
-    const { copyAgent } = await import("../../src/commands/copy");
-    await copyAgent(
-      "x",
-      { market: "paper", interval: 0 },
-      { apiUrl: "https://fomolt.test", apiKey: "k" },
-      { once: true }
-    );
-    expect.unreachable("should have exited");
-  } catch (e: any) {
-    expect(e.message).toBe("EXIT_1");
-  }
-  process.exit = originalExit;
-  const output = JSON.parse(stderr.join(""));
-  expect(output.code).toBe("VALIDATION_ERROR");
-  expect(output.error).toContain("--interval");
-});
-
-test("--interval rejects negative", async () => {
-  const originalExit = process.exit;
-  process.exit = ((code: number) => { throw new Error(`EXIT_${code}`); }) as any;
-  try {
-    const { copyAgent } = await import("../../src/commands/copy");
-    await copyAgent(
-      "x",
-      { market: "paper", interval: -5 },
-      { apiUrl: "https://fomolt.test", apiKey: "k" },
-      { once: true }
-    );
-    expect.unreachable("should have exited");
-  } catch (e: any) {
-    expect(e.message).toBe("EXIT_1");
-  }
-  process.exit = originalExit;
-  const output = JSON.parse(stderr.join(""));
-  expect(output.code).toBe("VALIDATION_ERROR");
-  expect(output.error).toContain("--interval");
-});
-
-test("--interval rejects non-numeric", async () => {
-  const originalExit = process.exit;
-  process.exit = ((code: number) => { throw new Error(`EXIT_${code}`); }) as any;
-  try {
-    const { copyAgent } = await import("../../src/commands/copy");
-    await copyAgent(
-      "x",
-      { market: "paper", interval: NaN },
-      { apiUrl: "https://fomolt.test", apiKey: "k" },
-      { once: true }
-    );
-    expect.unreachable("should have exited");
-  } catch (e: any) {
-    expect(e.message).toBe("EXIT_1");
-  }
-  process.exit = originalExit;
-  const output = JSON.parse(stderr.join(""));
-  expect(output.code).toBe("VALIDATION_ERROR");
-  expect(output.error).toContain("--interval");
-});
-
-test("--max-usdc rejects non-numeric", async () => {
-  const originalExit = process.exit;
-  process.exit = ((code: number) => { throw new Error(`EXIT_${code}`); }) as any;
-  try {
-    const { copyAgent } = await import("../../src/commands/copy");
-    await copyAgent(
-      "x",
-      { market: "paper", maxUsdc: "abc" },
-      { apiUrl: "https://fomolt.test", apiKey: "k" },
-      { once: true }
-    );
-    expect.unreachable("should have exited");
-  } catch (e: any) {
-    expect(e.message).toBe("EXIT_1");
-  }
-  process.exit = originalExit;
-  const output = JSON.parse(stderr.join(""));
-  expect(output.code).toBe("VALIDATION_ERROR");
-  expect(output.error).toContain("--max-usdc");
-});
-
-test("--max-usdc rejects zero", async () => {
-  const originalExit = process.exit;
-  process.exit = ((code: number) => { throw new Error(`EXIT_${code}`); }) as any;
-  try {
-    const { copyAgent } = await import("../../src/commands/copy");
-    await copyAgent(
-      "x",
-      { market: "paper", maxUsdc: "0" },
-      { apiUrl: "https://fomolt.test", apiKey: "k" },
-      { once: true }
-    );
-    expect.unreachable("should have exited");
-  } catch (e: any) {
-    expect(e.message).toBe("EXIT_1");
-  }
-  process.exit = originalExit;
-  const output = JSON.parse(stderr.join(""));
-  expect(output.code).toBe("VALIDATION_ERROR");
-  expect(output.error).toContain("--max-usdc");
 });
 
 test("live market uses live trade endpoint", async () => {

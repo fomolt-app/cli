@@ -58,7 +58,7 @@ async function showStatus() {
     console.log("  No agent configured.");
     console.log("");
     console.log("  New agent:");
-    console.log("    fomolt auth register --name <name> --invite-code <code>");
+    console.log("    fomolt auth register --name <name>");
     console.log("");
     console.log("  Existing agent:");
     console.log("    fomolt auth import --key <your-api-key>");
@@ -118,7 +118,13 @@ async function main() {
       error(err.message, err.code, {
         ...(err.retryAfter !== undefined ? { retryAfter: err.retryAfter } : {}),
         ...(err.requestId ? { requestId: err.requestId } : {}),
+        ...(err.hint ? { hint: err.hint } : {}),
       });
+      if (err.hint) {
+        const dim = process.stderr.isTTY ? "\x1b[2m" : "";
+        const reset = process.stderr.isTTY ? "\x1b[0m" : "";
+        process.stderr.write(`${dim}${err.hint}${reset}\n`);
+      }
     } else {
       error(err.message ?? "Unknown error", "UNEXPECTED_ERROR");
     }

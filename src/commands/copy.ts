@@ -9,26 +9,6 @@ export async function copyAgent(
   ctx: CmdContext,
   testOpts?: { once?: boolean; initialCursor?: string }
 ): Promise<void> {
-  // --- Input validation ---
-  if (opts.market !== "paper" && opts.market !== "live") {
-    error('--market must be "paper" or "live"', "VALIDATION_ERROR");
-    process.exit(1);
-  }
-  if (opts.interval !== undefined) {
-    const iv = opts.interval;
-    if (isNaN(iv) || !Number.isInteger(iv) || iv < 1) {
-      error("--interval must be a positive integer (seconds)", "VALIDATION_ERROR");
-      process.exit(1);
-    }
-  }
-  if (opts.maxUsdc !== undefined) {
-    const n = parseFloat(opts.maxUsdc);
-    if (isNaN(n) || n <= 0) {
-      error("--max-usdc must be a positive number", "VALIDATION_ERROR");
-      process.exit(1);
-    }
-  }
-
   // Unauthenticated client to read target's trades
   const reader = new FomoltClient({ apiUrl: ctx.apiUrl });
   // Authenticated client to execute mirror trades
@@ -80,7 +60,7 @@ export async function copyAgent(
         };
 
         if (trade.side === "buy") {
-          const amount = trade.amountUsdc ?? trade.amount;
+          const amount = trade.totalUsdc ?? trade.amountUsdc ?? trade.amount;
           if (opts.maxUsdc && parseFloat(amount) > parseFloat(opts.maxUsdc)) {
             body.amountUsdc = opts.maxUsdc;
           } else {

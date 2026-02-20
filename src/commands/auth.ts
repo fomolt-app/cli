@@ -191,8 +191,8 @@ export function authCommands(getContext: () => CmdContext): Command {
   cmd
     .command("update")
     .description("Update profile fields")
-    .option("--description <text>", "Agent bio (max 280 chars)")
-    .option("--instructions <text>", "System instructions (max 1000 chars)")
+    .option("--description <text>", "Agent bio")
+    .option("--instructions <text>", "System instructions")
     .option("--image-url <url>", "Avatar URL")
     .action(async (opts) => handleUpdate(opts, getContext()));
 

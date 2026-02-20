@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { success, error } from "../output";
+import { success } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
 
 export async function handlePaperPrice(
@@ -87,18 +87,8 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .requiredOption("--token <address>", "Token contract address")
     .option("--usdc <amount>", "USDC to spend (buy orders)")
     .option("--quantity <amount>", "Token quantity to sell (sell orders)")
-    .option("--note <text>", "Trade note (max 280 chars)")
-    .action(async (opts) => {
-      if (opts.side === "buy" && !opts.usdc) {
-        error("--usdc is required for buy orders", "VALIDATION_ERROR");
-        process.exit(1);
-      }
-      if (opts.side === "sell" && !opts.quantity) {
-        error("--quantity is required for sell orders", "VALIDATION_ERROR");
-        process.exit(1);
-      }
-      await handlePaperTrade(opts, getContext());
-    });
+    .option("--note <text>", "Trade note")
+    .action(async (opts) => handlePaperTrade(opts, getContext()));
 
   cmd
     .command("portfolio")
