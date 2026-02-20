@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { FomoltClient } from "../client";
-import { success, error } from "../output";
+import { success } from "../output";
 import type { CmdContext } from "../context";
 
 export async function handleAgentProfile(
@@ -17,14 +17,6 @@ export async function handleAgentTrades(
   opts: { cursor?: string; limit?: string },
   ctx: Pick<CmdContext, "apiUrl">
 ): Promise<void> {
-  if (opts.limit !== undefined) {
-    const n = parseInt(opts.limit, 10);
-    if (isNaN(n) || !Number.isInteger(n) || n < 1 || n > 100) {
-      error("--limit must be an integer between 1 and 100", "VALIDATION_ERROR");
-      process.exit(1);
-    }
-  }
-
   const client = new FomoltClient({ apiUrl: ctx.apiUrl });
   const params: Record<string, string> = {};
   if (opts.cursor) params.cursor = opts.cursor;

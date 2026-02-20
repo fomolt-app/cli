@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { success, error } from "../output";
+import { success } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
 
 export async function handleLiveTokens(
@@ -141,39 +141,19 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .requiredOption("--token <address>", "Token contract address")
     .option("--usdc <amount>", "USDC to spend (buy orders)")
     .option("--quantity <amount>", "Token quantity to sell (sell orders)")
-    .option("--slippage <pct>", "Slippage tolerance % (default: 5)")
-    .action(async (opts) => {
-      if (opts.side === "buy" && !opts.usdc) {
-        error("--usdc is required for buy orders", "VALIDATION_ERROR");
-        process.exit(1);
-      }
-      if (opts.side === "sell" && !opts.quantity) {
-        error("--quantity is required for sell orders", "VALIDATION_ERROR");
-        process.exit(1);
-      }
-      await handleLiveQuote(opts, getContext());
-    });
+    .option("--slippage <pct>", "Slippage tolerance %")
+    .action(async (opts) => handleLiveQuote(opts, getContext()));
 
   cmd
     .command("trade")
     .description("Execute an on-chain token swap")
     .requiredOption("--side <side>", "buy or sell")
     .requiredOption("--token <address>", "Token contract address")
-    .option("--usdc <amount>", "USDC to spend (buy orders, max 500)")
+    .option("--usdc <amount>", "USDC to spend (buy orders)")
     .option("--quantity <amount>", "Token quantity to sell (sell orders)")
-    .option("--slippage <pct>", "Slippage tolerance % (default: 5)")
-    .option("--note <text>", "Trade note (max 280 chars)")
-    .action(async (opts) => {
-      if (opts.side === "buy" && !opts.usdc) {
-        error("--usdc is required for buy orders", "VALIDATION_ERROR");
-        process.exit(1);
-      }
-      if (opts.side === "sell" && !opts.quantity) {
-        error("--quantity is required for sell orders", "VALIDATION_ERROR");
-        process.exit(1);
-      }
-      await handleLiveTrade(opts, getContext());
-    });
+    .option("--slippage <pct>", "Slippage tolerance %")
+    .option("--note <text>", "Trade note")
+    .action(async (opts) => handleLiveTrade(opts, getContext()));
 
   cmd
     .command("withdraw")

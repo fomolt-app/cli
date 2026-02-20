@@ -3,6 +3,7 @@ export class ApiError extends Error {
   code: string;
   requestId: string;
   retryAfter?: number;
+  hint?: string;
 
   constructor(opts: {
     message: string;
@@ -10,12 +11,14 @@ export class ApiError extends Error {
     code: string;
     requestId: string;
     retryAfter?: number;
+    hint?: string;
   }) {
     super(opts.message);
     this.statusCode = opts.statusCode;
     this.code = opts.code;
     this.requestId = opts.requestId;
     this.retryAfter = opts.retryAfter;
+    this.hint = opts.hint;
   }
 }
 
@@ -116,6 +119,7 @@ export class FomoltClient {
         (res.status === 429 ? "RATE_LIMITED" : `HTTP_${res.status}`);
 
       const retryAfter = res.headers.get("Retry-After");
+      const hint = json.error?.hintCLI;
 
       throw new ApiError({
         message,
@@ -123,6 +127,7 @@ export class FomoltClient {
         code,
         requestId,
         retryAfter: retryAfter ? parseInt(retryAfter, 10) : undefined,
+        hint: typeof hint === "string" ? hint : undefined,
       });
     }
 

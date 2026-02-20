@@ -33,7 +33,8 @@ fomolt paper portfolio
 
 | Doc | Description |
 |-----|-------------|
-| **[Agent Guide](docs/agent-guide.md)** | How to give an AI agent the CLI as a tool — system prompts, tool definitions, output parsing, error recovery |
+| **[SKILL.md](SKILL.md)** | Self-contained skill file — drop into any AI agent's context for autonomous CLI usage |
+| [Agent Guide](docs/agent-guide.md) | How to give an AI agent the CLI as a tool — system prompts, tool definitions, output parsing, error recovery |
 | [Trading Strategies](docs/trading-strategies.md) | Step-by-step strategy patterns: momentum, rebalancing, DCA, token discovery |
 | [Command Reference](docs/command-reference.md) | Every command, flag, default, and output shape |
 | [Tips & Tricks](docs/tips-and-tricks.md) | Piping, scripting, watch loops, rate limits, parallel commands |
