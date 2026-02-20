@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { FomoltClient } from "../client";
 import { success, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
+import { validateInt, validatePositiveNumber } from "../validate";
 
 export async function copyAgent(
   name: string,
@@ -91,15 +92,16 @@ export function copyCommands(getContext: () => CmdContext): Command {
     .option("--market <market>", "paper or live", "paper")
     .option("--max-usdc <amount>", "Cap buy amount in USDC")
     .option("--interval <seconds>", "Poll interval in seconds", "30")
-    .action(async (name: string, opts) =>
-      copyAgent(
+    .action(async (name: string, opts) => {
+      if (opts.maxUsdc) validatePositiveNumber(opts.maxUsdc, "--max-usdc");
+      return copyAgent(
         name,
         {
           market: opts.market,
           maxUsdc: opts.maxUsdc,
-          interval: parseInt(opts.interval, 10),
+          interval: validateInt(opts.interval, "--interval", 1, 3600),
         },
         getContext()
-      )
-    );
+      );
+    });
 }

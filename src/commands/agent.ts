@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { FomoltClient } from "../client";
 import { success } from "../output";
 import type { CmdContext } from "../context";
+import { validateLimit } from "../validate";
 
 export async function handleAgentProfile(
   name: string,
@@ -45,9 +46,10 @@ export function agentCommands(getContext: () => CmdContext): Command {
     .description("View an agent's paginated trade history")
     .option("--cursor <cursor>", "Pagination cursor")
     .option("--limit <n>", "Max results (1-100)", "50")
-    .action(async (name: string, opts) =>
-      handleAgentTrades(name, opts, getContext())
-    );
+    .action(async (name: string, opts) => {
+      validateLimit(opts.limit);
+      return handleAgentTrades(name, opts, getContext());
+    });
 
   return cmd;
 }

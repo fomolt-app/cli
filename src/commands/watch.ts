@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { success } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
+import { validateInt, validateTokenAddress } from "../validate";
 
 export async function watchPortfolio(
   opts: { market: string; interval?: number },
@@ -65,7 +66,7 @@ export function watchCommands(getContext: () => CmdContext): Command {
     .option("--interval <seconds>", "Poll interval in seconds", "10")
     .action(async (opts) =>
       watchPortfolio(
-        { market: opts.market, interval: parseInt(opts.interval, 10) },
+        { market: opts.market, interval: validateInt(opts.interval, "--interval", 1, 3600) },
         getContext()
       )
     );
@@ -78,7 +79,7 @@ export function watchCommands(getContext: () => CmdContext): Command {
     .option("--interval <seconds>", "Poll interval in seconds", "10")
     .action(async (opts) =>
       watchPrice(
-        { token: opts.token, market: opts.market, interval: parseInt(opts.interval, 10) },
+        { token: validateTokenAddress(opts.token), market: opts.market, interval: validateInt(opts.interval, "--interval", 1, 3600) },
         getContext()
       )
     );

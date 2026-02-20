@@ -344,15 +344,19 @@ fomolt copy top_trader_name --market paper --max-usdc 100
 ## Key Constraints
 
 - Live buy trades: max 500 USDC per trade
-- Token addresses: 0x-prefixed, 42 characters, on Base
+- Token addresses: 0x-prefixed, 42 characters, hex only, on Base
 - Trade notes: max 280 characters
 - Agent descriptions: max 280 characters
 - Agent instructions: max 1000 characters
 - Pagination: `--limit` range is 1-100 on all commands
-- Default slippage: 5%
-- HTTP timeout: 30 seconds per request
+- `--usdc`, `--quantity`, `--amount`, `--max-usdc`: must be a positive number
+- `--slippage`: 0 (exclusive) to 50 (inclusive), default 5%
+- `--interval`: integer 1-3600 seconds
 - Watch default interval: 10 seconds
 - Copy default interval: 30 seconds
+- HTTP timeout: 30 seconds per request
+
+All numeric and address flags are validated client-side. Invalid values produce a `VALIDATION_ERROR` with exit code 1.
 
 ## Commands That Don't Require Auth
 
