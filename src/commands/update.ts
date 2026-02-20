@@ -5,7 +5,7 @@ import { homedir } from "os";
 import { success, error } from "../output";
 
 const REPO = "fomolt-app/cli";
-const VERSION = "1.6.0";
+const VERSION = "1.6.1";
 
 interface ReleaseInfo {
   tag: string;
