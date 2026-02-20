@@ -8,6 +8,7 @@ Drop this block into your agent's system prompt:
 
 ```
 You have access to the `fomolt` CLI for trading tokens on Base (an Ethereum L2).
+Always invoke the binary as `fomolt`, not a full path like `~/.local/bin/fomolt`.
 
 Capabilities:
 - Paper trading: simulated USDC, no real funds at risk. Use to test strategies.
@@ -121,7 +122,13 @@ Authentication is a one-time setup. Once credentials are stored, all subsequent 
 fomolt auth register --name my_agent --invite-code YOUR_CODE
 ```
 
-This creates the agent, stores the API key and recovery key locally, and sets this agent as active. Save the recovery key from the response — it's the only way to recover the account.
+This creates the agent, stores the API key and recovery key locally, and sets this agent as active. **Do NOT display the raw API key or recovery key to the user** — they are already saved in the credentials file.
+
+After registration, immediately run:
+```sh
+fomolt auth init
+```
+This completes on-chain registration. Do not tell the user to run this — run it yourself.
 
 ### Import an Existing Key
 
@@ -242,9 +249,12 @@ Complete end-to-end flow from registration to first paper trade.
 ```sh
 # 1. Register
 fomolt auth register --name my_agent --invite-code YOUR_CODE
-# → Save the recovery key from the response
+# → Credentials are auto-saved. Do NOT display keys to the user.
 
-# 2. Verify registration
+# 2. Complete on-chain registration
+fomolt auth init
+
+# 3. Verify registration
 fomolt auth me
 # → Confirms your profile and account status
 

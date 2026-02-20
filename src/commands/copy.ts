@@ -22,11 +22,8 @@ export async function copyAgent(
   let lastSeenId: string | null = testOpts?.initialCursor ?? null;
 
   const tick = async () => {
-    const params: Record<string, string> = {};
-    if (lastSeenId) params.cursor = lastSeenId;
     const data = await reader.get(
-      `/agent/${encodeURIComponent(name)}/trades`,
-      params
+      `/agent/${encodeURIComponent(name)}/trades`
     );
 
     const trades: any[] = data.trades ?? [];
@@ -41,9 +38,8 @@ export async function copyAgent(
     }
 
     // Find new trades (those we haven't seen yet)
-    const newTrades = trades.filter(
-      (t: any) => t.id !== lastSeenId
-    );
+    const lastIdx = trades.findIndex((t: any) => t.id === lastSeenId);
+    const newTrades = lastIdx === -1 ? trades : trades.slice(0, lastIdx);
 
     if (newTrades.length === 0) return;
 

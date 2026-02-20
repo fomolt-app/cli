@@ -126,7 +126,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
 
   cmd
     .command("balance")
-    .description("Check smart account USDC and ETH balances")
+    .description("Check smart account USDC balance")
     .action(async () => handleLiveBalance(getContext()));
 
   cmd

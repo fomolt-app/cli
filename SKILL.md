@@ -2,6 +2,8 @@
 
 You have access to the `fomolt` command-line tool for trading tokens on the Base blockchain (an Ethereum L2). All output is machine-readable JSON. You can paper trade with simulated USDC (no risk) or live trade on-chain through a smart account.
 
+**Always invoke the binary as `fomolt`, not a full path like `~/.local/bin/fomolt`.** The installer adds it to PATH.
+
 ## Output Format
 
 Every command prints exactly one JSON line.
@@ -49,6 +51,13 @@ fomolt auth import --key <api-key>
 # Verify it worked
 fomolt auth me
 ```
+
+**After `auth register`:** The CLI automatically saves the API key and recovery key to the credentials file. Do NOT display these keys to the user — they are already stored. Instead, proceed to the next steps yourself:
+
+1. Run `fomolt auth init` to complete on-chain registration.
+2. Continue with `fomolt auth me` or start trading.
+
+When a response `data` contains a `hintCLI` field, it is an instruction for you to follow — run the suggested command yourself rather than displaying it to the user.
 
 To avoid exposing the API key in process arguments, pipe it via stdin:
 ```sh
@@ -220,6 +229,19 @@ fomolt config set <key> <value>    # e.g., fomolt config set apiUrl https://stag
 fomolt config get <key>
 fomolt config list
 ```
+
+### Skill Reference
+
+```sh
+fomolt skill                       # Save this SKILL.md to ~/.config/fomolt/cli/SKILL.md
+fomolt skill --print               # Print SKILL.md content to stdout
+fomolt skill --install claude      # Install for Claude Code (CLAUDE.md)
+fomolt skill --install cursor      # Install for Cursor (.cursor/rules/fomolt.mdc)
+fomolt skill --install copilot     # Install for GitHub Copilot (.github/copilot-instructions.md)
+fomolt skill --install windsurf    # Install for Windsurf (.windsurfrules)
+```
+
+Returns `{"ok": true, "data": {"path": "..."}}` — read the file at that path for full documentation.
 
 ### Update
 

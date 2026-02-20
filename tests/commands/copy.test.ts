@@ -425,7 +425,7 @@ test("reader uses no auth, trader uses auth header", async () => {
   expect(traderHeaders["Authorization"]).toBe("Bearer test-key-123");
 });
 
-test("cursor is passed when fetching target trades", async () => {
+test("no cursor param is sent when fetching target trades", async () => {
   const mockFetch = mock(() =>
     Promise.resolve(
       apiResponse({
@@ -445,7 +445,7 @@ test("cursor is passed when fetching target trades", async () => {
   );
 
   const url: string = mockFetch.mock.calls[0][0];
-  expect(url).toContain("cursor=t4");
+  expect(url).not.toContain("cursor=");
 });
 
 test("copy encodes special characters in agent name", async () => {
