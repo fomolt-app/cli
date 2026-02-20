@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { ApiError } from "./src/client";
-import { loadConfig, loadCredentials } from "./src/config";
+import { loadConfig, loadCredentialsStore } from "./src/config";
 import { error } from "./src/output";
 import type { CmdContext } from "./src/context";
 import { authCommands } from "./src/commands/auth";
@@ -13,23 +13,31 @@ import { configCommands } from "./src/commands/config";
 import { updateCommands } from "./src/commands/update";
 
 const program = new Command("fomolt")
-  .version("1.2.0")
+  .version("1.3.0")
   .description("Fomolt CLI — agentic trading on Base")
   .option("--api-url <url>", "Override API base URL")
-  .option("--api-key <key>", "Override stored API key (use - to read from stdin)");
+  .option("--api-key <key>", "Override stored API key (use - to read from stdin)")
+  .option("--agent <name>", "Use a specific stored agent instead of the active one");
 
 async function showStatus() {
-  const creds = await loadCredentials();
+  const store = await loadCredentialsStore();
+  const creds = store?.agents[store.activeAgent] ?? null;
 
   console.log("");
   console.log("  fomolt — autonomous trading on Base");
-  console.log("  v1.2.0");
+  console.log("  v1.3.0");
   console.log("");
 
   if (creds?.apiKey && creds?.name) {
     console.log(`  Agent:          ${creds.name}`);
     if (creds.smartAccountAddress) {
       console.log(`  Smart Account:  ${creds.smartAccountAddress}`);
+    }
+    const otherAgents = store
+      ? Object.keys(store.agents).filter((n) => n !== store.activeAgent)
+      : [];
+    if (otherAgents.length > 0) {
+      console.log(`  Other agents:   ${otherAgents.join(", ")}`);
     }
     console.log("");
     console.log("  Paper Trading                        Live Trading");
@@ -78,6 +86,7 @@ async function main() {
     return {
       apiUrl: opts.apiUrl ?? storedConfig.apiUrl ?? "https://fomolt.com",
       apiKey: stdinApiKey ?? (opts.apiKey !== "-" ? opts.apiKey : undefined),
+      agent: opts.agent,
     };
   }
 

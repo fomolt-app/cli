@@ -13,11 +13,12 @@ test("--help exits 0 and shows usage", async () => {
   expect(result).toContain("leaderboard");
   expect(result).toContain("watch");
   expect(result).toContain("config");
+  expect(result).toContain("--agent");
 });
 
 test("--version shows version", async () => {
   const result = await $`bun run index.ts --version`.text();
-  expect(result.trim()).toBe("1.2.0");
+  expect(result.trim()).toBe("1.3.0");
 });
 
 test("auth --help shows subcommands", async () => {
@@ -28,6 +29,9 @@ test("auth --help shows subcommands", async () => {
   expect(result).toContain("init");
   expect(result).toContain("me");
   expect(result).toContain("update");
+  expect(result).toContain("list");
+  expect(result).toContain("switch");
+  expect(result).toContain("remove");
 });
 
 test("paper trade --help shows --usdc and --quantity flags", async () => {
