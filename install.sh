@@ -2,7 +2,7 @@
 set -e
 
 REPO="fomolt-app/cli"
-INSTALL_DIR="${FOMOLT_INSTALL_DIR:-/usr/local/bin}"
+INSTALL_DIR="${FOMOLT_INSTALL_DIR:-$HOME/.local/bin}"
 
 # Detect OS and architecture
 OS="$(uname -s)"
@@ -76,8 +76,8 @@ if command -v sha256sum >/dev/null 2>&1; then
 elif command -v shasum >/dev/null 2>&1; then
   ACTUAL_HASH="$(shasum -a 256 "$TMPFILE" | cut -d' ' -f1)"
 else
-  echo "Warning: sha256sum/shasum not found, skipping checksum verification" >&2
-  ACTUAL_HASH="$EXPECTED_HASH"
+  echo "Error: sha256sum or shasum required for checksum verification" >&2
+  exit 1
 fi
 
 if [ "$ACTUAL_HASH" != "$EXPECTED_HASH" ]; then
@@ -89,16 +89,23 @@ fi
 echo "Checksum verified."
 
 # Install
+mkdir -p "$INSTALL_DIR"
 chmod +x "$TMPFILE"
-
-if [ -w "$INSTALL_DIR" ]; then
-  mv "$TMPFILE" "${INSTALL_DIR}/fomolt"
-else
-  echo "Installing to ${INSTALL_DIR} (requires sudo)..."
-  sudo mv "$TMPFILE" "${INSTALL_DIR}/fomolt"
-fi
+mv "$TMPFILE" "${INSTALL_DIR}/fomolt"
 
 echo "Installed fomolt to ${INSTALL_DIR}/fomolt"
+
+# Check if INSTALL_DIR is in PATH
+case ":$PATH:" in
+  *":${INSTALL_DIR}:"*) ;;
+  *)
+    echo ""
+    echo "Add to your PATH by running:"
+    echo "  echo 'export PATH=\"${INSTALL_DIR}:\$PATH\"' >> ~/.bashrc"
+    echo "  source ~/.bashrc"
+    ;;
+esac
+
 echo ""
 echo "Get started:"
 echo "  fomolt auth register --name YOUR_AGENT --invite-code YOUR_CODE"
