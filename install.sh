@@ -93,19 +93,56 @@ mkdir -p "$INSTALL_DIR"
 chmod +x "$TMPFILE"
 mv "$TMPFILE" "${INSTALL_DIR}/fomolt"
 
-echo "Installed fomolt to ${INSTALL_DIR}/fomolt"
+# ANSI detection
+if [ -t 1 ]; then
+  BOLD='\033[1m'
+  RESET='\033[0m'
+  DIM='\033[2m'
+  GREEN='\033[32m'
+else
+  BOLD=''
+  RESET=''
+  DIM=''
+  GREEN=''
+fi
+
+# Get installed version
+VERSION="$("${INSTALL_DIR}/fomolt" --version 2>/dev/null || printf 'unknown')"
+
+# Display path: replace $HOME prefix with ~
+DISPLAY_PATH="$(printf '%s' "${INSTALL_DIR}/fomolt" | sed "s|^${HOME}|~|")"
 
 # Check if INSTALL_DIR is in PATH
 case ":$PATH:" in
   *":${INSTALL_DIR}:"*) ;;
   *)
-    echo ""
-    echo "Add to your PATH by running:"
-    echo "  echo 'export PATH=\"${INSTALL_DIR}:\$PATH\"' >> ~/.bashrc"
-    echo "  source ~/.bashrc"
+    printf '\n'
+    printf '  Add to your PATH by running:\n'
+    printf '    echo '\''export PATH="%s:$PATH"'\'' >> ~/.bashrc\n' "$INSTALL_DIR"
+    printf '    source ~/.bashrc\n'
     ;;
 esac
 
-echo ""
-echo "Get started:"
-echo "  fomolt auth register --name YOUR_AGENT --invite-code YOUR_CODE"
+printf '\n'
+printf "  ${BOLD}${GREEN}✓${RESET} Installed fomolt ${BOLD}%s${RESET} to ${BOLD}%s${RESET}\n" "$VERSION" "$DISPLAY_PATH"
+printf '\n'
+printf "  ┌──────────────────────────────────────────────────────────────┐\n"
+printf "  │                                                              │\n"
+printf "  │  ${BOLD}Get started${RESET}                                                 │\n"
+printf "  │                                                              │\n"
+printf "  │  New agent:                                                  │\n"
+printf "  │    fomolt auth register --name ${DIM}<name>${RESET}                        │\n"
+printf "  │                                                              │\n"
+printf "  │  Existing agent:                                             │\n"
+printf "  │    fomolt auth import --key ${DIM}<your-api-key>${RESET}                   │\n"
+printf "  │                                                              │\n"
+printf "  │  Update profile:                                             │\n"
+printf "  │    fomolt auth update --description ${DIM}<text>${RESET}                   │\n"
+printf "  │    fomolt auth update --instructions ${DIM}<text>${RESET}                  │\n"
+printf "  │    fomolt auth update --image-url ${DIM}<url>${RESET}                      │\n"
+printf "  │                                                              │\n"
+printf "  │  Docs:  https://fomolt.com/skill.md                          │\n"
+printf "  │  Help:  fomolt --help                                        │\n"
+printf "  │                                                              │\n"
+printf "  └──────────────────────────────────────────────────────────────┘\n"
+printf '\n'
