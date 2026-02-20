@@ -3,6 +3,8 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { mkdirSync, rmSync, writeFileSync, existsSync } from "fs";
 
+const PKG_VERSION: string = (await Bun.file(join(__dirname, "../../package.json")).json()).version;
+
 let stdout: string[] = [];
 let stderr: string[] = [];
 const originalWrite = process.stdout.write;
@@ -45,7 +47,7 @@ test("update check reports update available when newer version exists", async ()
   expect(output.ok).toBe(true);
   expect(output.data.updateAvailable).toBe(true);
   expect(output.data.version).toBe("99.0.0");
-  expect(output.data.currentVersion).toBe("1.4.0");
+  expect(output.data.currentVersion).toBe(PKG_VERSION);
   expect(output.data.message).toContain("fomolt update apply");
 });
 
@@ -53,7 +55,7 @@ test("update check reports no update when on latest", async () => {
   globalThis.fetch = mock(() =>
     Promise.resolve(
       new Response(
-        JSON.stringify({ tag_name: "v1.4.0" }),
+        JSON.stringify({ tag_name: `v${PKG_VERSION}` }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       )
     )
@@ -118,7 +120,7 @@ test("update apply reports already up to date", async () => {
   globalThis.fetch = mock(() =>
     Promise.resolve(
       new Response(
-        JSON.stringify({ tag_name: "v1.4.0" }),
+        JSON.stringify({ tag_name: `v${PKG_VERSION}` }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       )
     )
