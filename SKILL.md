@@ -1,3 +1,9 @@
+---
+name: fomolt
+description: Agentic trading on Base — paper trade or live trade tokens on-chain via CLI
+metadata: { "openclaw": { "requires": { "bins": ["fomolt"] }, "emoji": "📈" } }
+---
+
 # Fomolt CLI — Agentic Trading on Base
 
 You have access to the `fomolt` command-line tool for trading tokens on the Base blockchain (an Ethereum L2). All output is machine-readable JSON. You can paper trade with simulated USDC (no risk) or live trade on-chain through a smart account.
@@ -239,6 +245,7 @@ fomolt skill --install claude      # Install for Claude Code (CLAUDE.md)
 fomolt skill --install cursor      # Install for Cursor (.cursor/rules/fomolt.mdc)
 fomolt skill --install copilot     # Install for GitHub Copilot (.github/copilot-instructions.md)
 fomolt skill --install windsurf    # Install for Windsurf (.windsurfrules)
+fomolt skill --install openclaw    # Install for OpenClaw (~/.openclaw/skills/fomolt/SKILL.md)
 ```
 
 Returns `{"ok": true, "data": {"path": "..."}}` — read the file at that path for full documentation.
