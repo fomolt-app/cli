@@ -13,13 +13,15 @@ import { configCommands } from "./src/commands/config";
 import { updateCommands } from "./src/commands/update";
 import { agentCommands } from "./src/commands/agent";
 import { copyCommands } from "./src/commands/copy";
+import { skillCommand } from "./src/commands/skill";
 
 const program = new Command("fomolt")
   .version("1.6.0")
   .description("Fomolt CLI — agentic trading on Base")
   .option("--api-url <url>", "Override API base URL")
   .option("--api-key <key>", "Override stored API key (use - to read from stdin)")
-  .option("--agent <name>", "Use a specific stored agent instead of the active one");
+  .option("--agent <name>", "Use a specific stored agent instead of the active one")
+  .addHelpText("after", "\nRun `fomolt skill` to download the full agent reference (SKILL.md).");
 
 async function showStatus() {
   const store = await loadCredentialsStore();
@@ -54,6 +56,8 @@ async function showStatus() {
     console.log("  fomolt leaderboard                    fomolt update check");
     console.log("  fomolt achievements                   fomolt --help");
     console.log("  fomolt agent profile <name>           fomolt copy <name>");
+    console.log("");
+    console.log("  Docs:  fomolt skill              (saves full CLI reference)");
   } else {
     console.log("  No agent configured.");
     console.log("");
@@ -63,8 +67,7 @@ async function showStatus() {
     console.log("  Existing agent:");
     console.log("    fomolt auth import --key <your-api-key>");
     console.log("");
-    console.log("  Docs:  https://fomolt.com/skill.md");
-    console.log("  Spec:  fomolt spec");
+    console.log("  Docs:  fomolt skill              (saves full CLI reference)");
   }
 
   console.log("");
@@ -110,6 +113,7 @@ async function main() {
   program.addCommand(agentCommands(getContext));
   program.addCommand(copyCommands(getContext));
   program.addCommand(updateCommands());
+  program.addCommand(skillCommand());
 
   try {
     await program.parseAsync(process.argv);
