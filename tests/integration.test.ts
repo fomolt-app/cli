@@ -13,6 +13,8 @@ test("--help exits 0 and shows usage", async () => {
   expect(result).toContain("leaderboard");
   expect(result).toContain("watch");
   expect(result).toContain("config");
+  expect(result).toContain("agent");
+  expect(result).toContain("copy");
   expect(result).toContain("--agent");
 });
 
@@ -40,6 +42,27 @@ test("paper trade --help shows --usdc and --quantity flags", async () => {
   expect(result).toContain("--quantity");
   expect(result).toContain("--side");
   expect(result).toContain("--token");
+});
+
+test("agent --help shows subcommands", async () => {
+  const result = await $`bun run index.ts agent --help`.text();
+  expect(result).toContain("profile");
+  expect(result).toContain("trades");
+  expect(result).toContain("no auth required");
+});
+
+test("copy --help shows all flags", async () => {
+  const result = await $`bun run index.ts copy --help`.text();
+  expect(result).toContain("--market");
+  expect(result).toContain("--max-usdc");
+  expect(result).toContain("--interval");
+  expect(result).toContain("paper or live");
+});
+
+test("agent trades --help shows pagination flags", async () => {
+  const result = await $`bun run index.ts agent trades --help`.text();
+  expect(result).toContain("--cursor");
+  expect(result).toContain("--limit");
 });
 
 test("auth me without credentials outputs JSON error", async () => {

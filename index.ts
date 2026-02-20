@@ -11,6 +11,8 @@ import { feedCommand, specCommand } from "./src/commands/feed";
 import { watchCommands } from "./src/commands/watch";
 import { configCommands } from "./src/commands/config";
 import { updateCommands } from "./src/commands/update";
+import { agentCommands } from "./src/commands/agent";
+import { copyCommands } from "./src/commands/copy";
 
 const program = new Command("fomolt")
   .version("1.3.0")
@@ -51,6 +53,7 @@ async function showStatus() {
     console.log("  fomolt auth me                        fomolt feed");
     console.log("  fomolt leaderboard                    fomolt update check");
     console.log("  fomolt achievements                   fomolt --help");
+    console.log("  fomolt agent profile <name>           fomolt copy <name>");
   } else {
     console.log("  No agent configured.");
     console.log("");
@@ -104,6 +107,8 @@ async function main() {
   program.addCommand(leaderboardCommand(getContext));
   program.addCommand(feedCommand(getContext));
   program.addCommand(specCommand(getContext));
+  program.addCommand(agentCommands(getContext));
+  program.addCommand(copyCommands(getContext));
   program.addCommand(updateCommands());
 
   try {
