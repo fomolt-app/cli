@@ -1,39 +1,7 @@
 import { Command } from "commander";
-import { success, error } from "../output";
+import { success } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-
-function validateUsername(value: string): string {
-  if (!/^[a-zA-Z0-9_]{1,15}$/.test(value)) {
-    error(
-      `Username must be 1-15 alphanumeric/underscore characters, got "${value}"`,
-      "VALIDATION_ERROR"
-    );
-    process.exit(1);
-  }
-  return value;
-}
-
-function validateTweetId(value: string): string {
-  if (!/^\d+$/.test(value)) {
-    error(
-      `Tweet ID must be numeric, got "${value}"`,
-      "VALIDATION_ERROR"
-    );
-    process.exit(1);
-  }
-  return value;
-}
-
-function validateQuery(value: string): string {
-  if (!value || value.length === 0 || value.length > 500) {
-    error(
-      `--query must be 1-500 characters, got ${value.length}`,
-      "VALIDATION_ERROR"
-    );
-    process.exit(1);
-  }
-  return value;
-}
+import { validateUsername, validateTweetId, validateQuery } from "../validate";
 
 export async function handleTwitterSearch(
   opts: { query: string; type?: string; cursor?: string },
