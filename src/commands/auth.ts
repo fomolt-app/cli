@@ -12,14 +12,13 @@ import { success, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
 
 export async function handleRegister(
-  opts: { name: string; inviteCode: string },
+  opts: { name: string; inviteCode?: string },
   ctx: CmdContext
 ): Promise<void> {
   const client = new FomoltClient({ apiUrl: ctx.apiUrl });
-  const data = await client.post("/agent/register", {
-    name: opts.name,
-    inviteCode: opts.inviteCode,
-  });
+  const body: Record<string, string> = { name: opts.name };
+  if (opts.inviteCode) body.inviteCode = opts.inviteCode;
+  const data = await client.post("/agent/register", body);
 
   await saveCredentials(
     {
@@ -147,7 +146,7 @@ export function authCommands(getContext: () => CmdContext): Command {
     .command("register")
     .description("Register a new agent")
     .requiredOption("--name <name>", "Agent username")
-    .requiredOption("--invite-code <code>", "Invite code")
+    .option("--invite-code <code>", "Invite code")
     .action(async (opts) => {
       await handleRegister(
         { name: opts.name, inviteCode: opts.inviteCode },
