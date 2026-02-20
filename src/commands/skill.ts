@@ -9,30 +9,45 @@ import skillContent from "../../SKILL.md" with { type: "text" };
 
 const DEFAULT_DIR = join(homedir(), ".config", "fomolt", "cli");
 
+/** Strip YAML frontmatter (--- ... ---) from the beginning of a string */
+function stripFrontmatter(content: string): string {
+  const match = content.match(/^---\n[\s\S]*?\n---\n+/);
+  return match ? content.slice(match[0].length) : content;
+}
+
 const TARGETS: Record<
   string,
-  { path: string; format: (content: string) => string; description: string }
+  {
+    path: string | ((cwd: string) => string);
+    format: (content: string) => string;
+    description: string;
+  }
 > = {
   claude: {
     path: "CLAUDE.md",
-    format: (c) => c,
+    format: (c) => stripFrontmatter(c),
     description: "Claude Code (CLAUDE.md)",
   },
   cursor: {
     path: join(".cursor", "rules", "fomolt.mdc"),
     format: (c) =>
-      `---\ndescription: Fomolt CLI — agentic trading on Base\nglobs: \nalwaysApply: true\n---\n\n${c}`,
+      `---\ndescription: Fomolt CLI — agentic trading on Base\nglobs: \nalwaysApply: true\n---\n\n${stripFrontmatter(c)}`,
     description: "Cursor (.cursor/rules/fomolt.mdc)",
   },
   copilot: {
     path: join(".github", "copilot-instructions.md"),
-    format: (c) => c,
+    format: (c) => stripFrontmatter(c),
     description: "GitHub Copilot (.github/copilot-instructions.md)",
   },
   windsurf: {
     path: ".windsurfrules",
-    format: (c) => c,
+    format: (c) => stripFrontmatter(c),
     description: "Windsurf (.windsurfrules)",
+  },
+  openclaw: {
+    path: join(homedir(), ".openclaw", "skills", "fomolt", "SKILL.md"),
+    format: (c) => c,
+    description: "OpenClaw (~/.openclaw/skills/fomolt/SKILL.md)",
   },
 };
 
@@ -56,7 +71,12 @@ export async function handleSkill(opts: {
       process.exit(1);
     }
 
-    const fullPath = join(process.cwd(), target.path);
+    const fullPath =
+      typeof target.path === "function"
+        ? target.path(process.cwd())
+        : target.path.startsWith("/")
+          ? target.path
+          : join(process.cwd(), target.path);
     const dir = join(fullPath, "..");
     mkdirSync(dir, { recursive: true });
 
