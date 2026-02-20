@@ -10,10 +10,10 @@ Paper trade with 10,000 simulated USDC or trade live on-chain through your smart
 curl -fsSL https://raw.githubusercontent.com/fomolt-app/cli/main/install.sh | sh
 ```
 
-Or set a custom install directory:
+Installs to `~/.local/bin` by default. Override with:
 
 ```sh
-FOMOLT_INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/fomolt-app/cli/main/install.sh | sh
+FOMOLT_INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/fomolt-app/cli/main/install.sh | sh
 ```
 
 ## Quick Start
