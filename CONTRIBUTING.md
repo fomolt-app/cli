@@ -141,9 +141,9 @@ PRs are squash-merged into `main`. Branch protection requires admin merge.
 The release script handles everything: version bump, tests, PR, merge, binary build, checksums, and GitHub release.
 
 ```sh
-GH_TOKEN=<pat> bun run scripts/release.ts patch   # 1.6.3 → 1.6.4
-GH_TOKEN=<pat> bun run scripts/release.ts minor   # 1.6.3 → 1.7.0
-GH_TOKEN=<pat> bun run scripts/release.ts major   # 1.6.3 → 2.0.0
+GH_TOKEN=<pat> bun run scripts/release.ts patch   # 1.7.0 → 1.7.1
+GH_TOKEN=<pat> bun run scripts/release.ts minor   # 1.7.0 → 1.8.0
+GH_TOKEN=<pat> bun run scripts/release.ts major   # 1.7.0 → 2.0.0
 ```
 
 Requires `GH_TOKEN` with repo + admin push access. Must be on `main` with a clean working tree.
