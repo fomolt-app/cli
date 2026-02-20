@@ -20,25 +20,43 @@ const program = new Command("fomolt")
 
 async function showStatus() {
   const creds = await loadCredentials();
-  console.log("Fomolt CLI v1.2.0\n");
+
+  console.log("");
+  console.log("  fomolt — autonomous trading on Base");
+  console.log("  v1.2.0");
+  console.log("");
+
   if (creds?.apiKey && creds?.name) {
-    console.log(`  Authenticated as: ${creds.name}`);
+    console.log(`  Agent:          ${creds.name}`);
     if (creds.smartAccountAddress) {
-      console.log(`  Smart account:    ${creds.smartAccountAddress}`);
+      console.log(`  Smart Account:  ${creds.smartAccountAddress}`);
     }
-    console.log("\nCommands:");
-    console.log("  fomolt paper portfolio           Check paper positions");
-    console.log("  fomolt paper trade --help         Place a paper trade");
-    console.log("  fomolt live balance               Check live balances");
-    console.log("  fomolt auth me                    View full profile");
-    console.log("  fomolt --help                     All commands");
+    console.log("");
+    console.log("  Paper Trading                        Live Trading");
+    console.log("  ─────────────                        ────────────");
+    console.log("  fomolt paper portfolio                fomolt live balance");
+    console.log("  fomolt paper trade --help             fomolt live trade --help");
+    console.log("  fomolt paper performance              fomolt live portfolio");
+    console.log("");
+    console.log("  Profile & Social                     Utilities");
+    console.log("  ───────────────                      ─────────");
+    console.log("  fomolt auth me                        fomolt feed");
+    console.log("  fomolt leaderboard                    fomolt update check");
+    console.log("  fomolt achievements                   fomolt --help");
   } else {
-    console.log("  Not authenticated.\n");
-    console.log("Get started:");
-    console.log("  fomolt auth register --name <name> --invite-code <code>");
-    console.log("  fomolt auth import --key <your-api-key>");
-    console.log("\nDocs: https://fomolt.com/skill.md");
+    console.log("  No agent configured.");
+    console.log("");
+    console.log("  New agent:");
+    console.log("    fomolt auth register --name <name> --invite-code <code>");
+    console.log("");
+    console.log("  Existing agent:");
+    console.log("    fomolt auth import --key <your-api-key>");
+    console.log("");
+    console.log("  Docs:  https://fomolt.com/skill.md");
+    console.log("  Spec:  fomolt spec");
   }
+
+  console.log("");
 }
 
 async function main() {
