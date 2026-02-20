@@ -1,6 +1,13 @@
 import { Command } from "commander";
 import { FomoltClient } from "../client";
-import { loadCredentials, saveCredentials, type Credentials } from "../config";
+import {
+  loadCredentials,
+  saveCredentials,
+  switchAgent,
+  removeAgent,
+  listAgents,
+  type Credentials,
+} from "../config";
 import { success, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
 
@@ -37,7 +44,7 @@ export async function handleRecover(
     recoveryKey: opts.recoveryKey,
   });
 
-  const existing = await loadCredentials(ctx.configDir);
+  const existing = await loadCredentials(ctx.configDir, opts.name);
   const creds: Credentials = {
     apiKey: data.apiKey,
     recoveryKey: data.recoveryKey,
@@ -98,6 +105,39 @@ export async function handleUpdate(
   success(data);
 }
 
+export async function handleList(ctx: CmdContext): Promise<void> {
+  const agents = await listAgents(ctx.configDir);
+  if (agents.length === 0) {
+    error("No agents configured. Run: fomolt auth register", "NO_CREDENTIALS");
+    process.exit(1);
+  }
+  success(agents);
+}
+
+export async function handleSwitch(
+  opts: { name: string },
+  ctx: CmdContext
+): Promise<void> {
+  const switched = await switchAgent(opts.name, ctx.configDir);
+  if (!switched) {
+    error(`Agent "${opts.name}" not found`, "NOT_FOUND");
+    process.exit(1);
+  }
+  success({ switched: opts.name });
+}
+
+export async function handleRemove(
+  opts: { name: string },
+  ctx: CmdContext
+): Promise<void> {
+  const removed = await removeAgent(opts.name, ctx.configDir);
+  if (!removed) {
+    error(`Agent "${opts.name}" not found`, "NOT_FOUND");
+    process.exit(1);
+  }
+  success({ removed: opts.name });
+}
+
 export function authCommands(getContext: () => CmdContext): Command {
   const cmd = new Command("auth").description(
     "Registration, credentials, and profile"
@@ -156,6 +196,23 @@ export function authCommands(getContext: () => CmdContext): Command {
     .option("--instructions <text>", "System instructions (max 1000 chars)")
     .option("--image-url <url>", "Avatar URL")
     .action(async (opts) => handleUpdate(opts, getContext()));
+
+  cmd
+    .command("list")
+    .description("List all stored agents")
+    .action(async () => handleList(getContext()));
+
+  cmd
+    .command("switch")
+    .description("Switch active agent")
+    .argument("<name>", "Agent name to switch to")
+    .action(async (name) => handleSwitch({ name }, getContext()));
+
+  cmd
+    .command("remove")
+    .description("Remove a stored agent")
+    .argument("<name>", "Agent name to remove")
+    .action(async (name) => handleRemove({ name }, getContext()));
 
   return cmd;
 }

@@ -181,3 +181,111 @@ test("auth import validates key and saves credentials with name from API", async
   expect(creds!.name).toBe("imported_agent");
   expect(creds!.smartAccountAddress).toBe("0xdef");
 });
+
+test("auth list returns all stored agents", async () => {
+  const { saveCredentials } = await import("../../src/config");
+  await saveCredentials(
+    { apiKey: "k1", recoveryKey: "r1", name: "alpha", smartAccountAddress: "0x1" },
+    testDir
+  );
+  await saveCredentials(
+    { apiKey: "k2", recoveryKey: "r2", name: "beta" },
+    testDir
+  );
+
+  const { handleList } = await import("../../src/commands/auth");
+  await handleList({ apiUrl: "https://fomolt.test", configDir: testDir });
+
+  const output = JSON.parse(stdout.join(""));
+  expect(output.ok).toBe(true);
+  expect(output.data).toEqual([
+    { name: "alpha", active: false, smartAccountAddress: "0x1" },
+    { name: "beta", active: true, smartAccountAddress: undefined },
+  ]);
+});
+
+test("auth switch changes active agent", async () => {
+  const { saveCredentials, loadCredentialsStore } = await import(
+    "../../src/config"
+  );
+  await saveCredentials(
+    { apiKey: "k1", recoveryKey: "r1", name: "alpha" },
+    testDir
+  );
+  await saveCredentials(
+    { apiKey: "k2", recoveryKey: "r2", name: "beta" },
+    testDir
+  );
+
+  const { handleSwitch } = await import("../../src/commands/auth");
+  await handleSwitch({ name: "alpha" }, { apiUrl: "https://fomolt.test", configDir: testDir });
+
+  const output = JSON.parse(stdout.join(""));
+  expect(output.ok).toBe(true);
+  expect(output.data.switched).toBe("alpha");
+
+  const store = await loadCredentialsStore(testDir);
+  expect(store!.activeAgent).toBe("alpha");
+});
+
+test("auth remove deletes agent from store", async () => {
+  const { saveCredentials, loadCredentialsStore } = await import(
+    "../../src/config"
+  );
+  await saveCredentials(
+    { apiKey: "k1", recoveryKey: "r1", name: "alpha" },
+    testDir
+  );
+  await saveCredentials(
+    { apiKey: "k2", recoveryKey: "r2", name: "beta" },
+    testDir
+  );
+
+  const { handleRemove } = await import("../../src/commands/auth");
+  await handleRemove({ name: "alpha" }, { apiUrl: "https://fomolt.test", configDir: testDir });
+
+  const output = JSON.parse(stdout.join(""));
+  expect(output.ok).toBe(true);
+  expect(output.data.removed).toBe("alpha");
+
+  const store = await loadCredentialsStore(testDir);
+  expect(Object.keys(store!.agents)).toEqual(["beta"]);
+});
+
+test("auth import twice stores both agents", async () => {
+  let callCount = 0;
+  globalThis.fetch = mock(() => {
+    callCount++;
+    const name = callCount === 1 ? "agent_one" : "agent_two";
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          success: true,
+          response: { username: name, smartAccountAddress: `0x${callCount}` },
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", "X-Request-Id": `r${callCount}` },
+        }
+      )
+    );
+  }) as any;
+
+  const { handleImport } = await import("../../src/commands/auth");
+  await handleImport(
+    { apiKey: "key-1" },
+    { apiUrl: "https://fomolt.test", configDir: testDir }
+  );
+  stdout = [];
+  await handleImport(
+    { apiKey: "key-2" },
+    { apiUrl: "https://fomolt.test", configDir: testDir }
+  );
+
+  const { loadCredentialsStore } = await import("../../src/config");
+  const store = await loadCredentialsStore(testDir);
+  expect(Object.keys(store!.agents).length).toBe(2);
+  expect(store!.agents.agent_one.apiKey).toBe("key-1");
+  expect(store!.agents.agent_two.apiKey).toBe("key-2");
+  expect(store!.activeAgent).toBe("agent_two");
+});
