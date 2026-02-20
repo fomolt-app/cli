@@ -14,6 +14,7 @@ import { updateCommands } from "./src/commands/update";
 import { agentCommands } from "./src/commands/agent";
 import { copyCommands } from "./src/commands/copy";
 import { skillCommand } from "./src/commands/skill";
+import { twitterCommands } from "./src/commands/twitter";
 
 const program = new Command("fomolt")
   .version("1.6.2")
@@ -56,6 +57,11 @@ async function showStatus() {
     console.log("  fomolt leaderboard                    fomolt update check");
     console.log("  fomolt achievements                   fomolt --help");
     console.log("  fomolt agent profile <name>           fomolt copy <name>");
+    console.log("");
+    console.log("  Twitter Data                         ");
+    console.log("  ────────────                         ");
+    console.log("  fomolt twitter search --query '...'   fomolt twitter user <name>");
+    console.log("  fomolt twitter tweets <name>          fomolt twitter usage");
     console.log("");
     console.log("  Docs:  fomolt skill              (saves full CLI reference)");
   } else {
@@ -112,6 +118,7 @@ async function main() {
   program.addCommand(specCommand(getContext));
   program.addCommand(agentCommands(getContext));
   program.addCommand(copyCommands(getContext));
+  program.addCommand(twitterCommands(getContext));
   program.addCommand(updateCommands());
   program.addCommand(skillCommand());
 
