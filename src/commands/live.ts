@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { success } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
+import { validateTokenAddress, validatePositiveNumber, validateLimit, validateSlippage } from "../validate";
 
 export async function handleLiveTokens(
   opts: { mode?: string; term?: string; address?: string; limit?: string },
@@ -122,7 +123,11 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .option("--term <text>", "Search term (required for mode=search)")
     .option("--address <address>", "Exact contract address lookup (overrides mode)")
     .option("--limit <n>", "Max results (1-100)", "20")
-    .action(async (opts) => handleLiveTokens(opts, getContext()));
+    .action(async (opts) => {
+      validateLimit(opts.limit);
+      if (opts.address) validateTokenAddress(opts.address, "--address");
+      return handleLiveTokens(opts, getContext());
+    });
 
   cmd
     .command("balance")
@@ -142,7 +147,13 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .option("--usdc <amount>", "USDC to spend (buy orders)")
     .option("--quantity <amount>", "Token quantity to sell (sell orders)")
     .option("--slippage <pct>", "Slippage tolerance %")
-    .action(async (opts) => handleLiveQuote(opts, getContext()));
+    .action(async (opts) => {
+      validateTokenAddress(opts.token);
+      if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
+      if (opts.quantity) validatePositiveNumber(opts.quantity, "--quantity");
+      if (opts.slippage) validateSlippage(opts.slippage);
+      return handleLiveQuote(opts, getContext());
+    });
 
   cmd
     .command("trade")
@@ -153,7 +164,13 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .option("--quantity <amount>", "Token quantity to sell (sell orders)")
     .option("--slippage <pct>", "Slippage tolerance %")
     .option("--note <text>", "Trade note")
-    .action(async (opts) => handleLiveTrade(opts, getContext()));
+    .action(async (opts) => {
+      validateTokenAddress(opts.token);
+      if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
+      if (opts.quantity) validatePositiveNumber(opts.quantity, "--quantity");
+      if (opts.slippage) validateSlippage(opts.slippage);
+      return handleLiveTrade(opts, getContext());
+    });
 
   cmd
     .command("withdraw")
@@ -161,7 +178,11 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .requiredOption("--currency <currency>", "Asset to withdraw: USDC or ETH")
     .requiredOption("--amount <amount>", "Amount to withdraw")
     .requiredOption("--to <address>", "Destination wallet address")
-    .action(async (opts) => handleLiveWithdraw(opts, getContext()));
+    .action(async (opts) => {
+      validateTokenAddress(opts.to, "--to");
+      validatePositiveNumber(opts.amount, "--amount");
+      return handleLiveWithdraw(opts, getContext());
+    });
 
   cmd
     .command("portfolio")
@@ -179,8 +200,10 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .option("--start-date <date>", "Filter from ISO datetime")
     .option("--end-date <date>", "Filter to ISO datetime")
     .option("--sort <order>", "Sort order (asc/desc)")
-    .action(async (opts) =>
-      handleLiveTrades(
+    .action(async (opts) => {
+      if (opts.limit) validateLimit(opts.limit);
+      if (opts.token) validateTokenAddress(opts.token);
+      return handleLiveTrades(
         {
           cursor: opts.cursor,
           limit: opts.limit,
@@ -192,8 +215,8 @@ export function liveCommands(getContext: () => CmdContext): Command {
           sort: opts.sort,
         },
         getContext()
-      )
-    );
+      );
+    });
 
   cmd
     .command("performance")

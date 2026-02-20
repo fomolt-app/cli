@@ -28,6 +28,8 @@ All commands print JSON. Success goes to stdout, errors to stderr.
 
 Rate limit errors include `retryAfter` (seconds). All errors may include `requestId`.
 
+**Validation:** Numeric flags (`--usdc`, `--quantity`, `--amount`, `--interval`, `--limit`, `--slippage`, `--max-usdc`) and address flags (`--token`, `--to`, `--address`) are validated client-side before making any API call. Invalid values exit immediately with `VALIDATION_ERROR`.
+
 **Exception:** Running bare `fomolt` with no subcommand prints a plain-text status dashboard (not JSON).
 
 ## Credentials
@@ -292,9 +294,9 @@ fomolt live quote --side sell --token <address> --quantity <qty> [--slippage <pc
 |------|----------|---------|-------------|
 | `--side <side>` | yes | — | `buy` or `sell` |
 | `--token <address>` | yes | — | Token contract address |
-| `--usdc <amount>` | buy only | — | USDC amount |
-| `--quantity <amount>` | sell only | — | Token quantity |
-| `--slippage <pct>` | no | `5` | Slippage tolerance % |
+| `--usdc <amount>` | buy only | — | USDC amount (must be > 0) |
+| `--quantity <amount>` | sell only | — | Token quantity (must be > 0) |
+| `--slippage <pct>` | no | `5` | Slippage tolerance % (0-50) |
 
 ### `live trade`
 
@@ -309,9 +311,9 @@ fomolt live trade --side sell --token <address> --quantity <qty> [--slippage <pc
 |------|----------|---------|-------------|
 | `--side <side>` | yes | — | `buy` or `sell` |
 | `--token <address>` | yes | — | Token contract address |
-| `--usdc <amount>` | buy only | — | USDC to spend (max 500) |
-| `--quantity <amount>` | sell only | — | Token quantity to sell |
-| `--slippage <pct>` | no | `5` | Slippage tolerance % |
+| `--usdc <amount>` | buy only | — | USDC to spend (max 500, must be > 0) |
+| `--quantity <amount>` | sell only | — | Token quantity to sell (must be > 0) |
+| `--slippage <pct>` | no | `5` | Slippage tolerance % (0-50) |
 | `--note <text>` | no | — | Trade note (max 280 chars) |
 
 ### `live withdraw`
@@ -325,8 +327,8 @@ fomolt live withdraw --currency <currency> --amount <amount> --to <address>
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--currency <currency>` | yes | `USDC` or `ETH` |
-| `--amount <amount>` | yes | Amount to withdraw |
-| `--to <address>` | yes | Destination wallet address |
+| `--amount <amount>` | yes | Amount to withdraw (must be > 0) |
+| `--to <address>` | yes | Destination wallet address (0x + 40 hex chars) |
 
 ### `live portfolio`
 
@@ -474,8 +476,8 @@ fomolt copy <name> [--market <market>] [--max-usdc <amount>] [--interval <second
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
 | `--market <market>` | no | `paper` | Execute mirror trades on `paper` or `live` |
-| `--max-usdc <amount>` | no | — | Cap the USDC amount on mirrored buy trades |
-| `--interval <seconds>` | no | `30` | Poll interval in seconds |
+| `--max-usdc <amount>` | no | — | Cap the USDC amount on mirrored buy trades (must be > 0) |
+| `--interval <seconds>` | no | `30` | Poll interval in seconds (1-3600) |
 
 Long-running command. Emits JSON lines: `{"event":"started",...}` on first tick, `{"event":"mirror","source":{...},"result":{...}}` for each copied trade.
 
@@ -496,7 +498,7 @@ fomolt watch portfolio [--market <market>] [--interval <seconds>]
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
 | `--market <market>` | no | `paper` | `paper` or `live` |
-| `--interval <seconds>` | no | `10` | Poll interval in seconds |
+| `--interval <seconds>` | no | `10` | Poll interval in seconds (1-3600) |
 
 ### `watch price`
 
@@ -508,9 +510,9 @@ fomolt watch price --token <address> [--market <market>] [--interval <seconds>]
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--token <address>` | yes | — | Token contract address |
+| `--token <address>` | yes | — | Token contract address (0x + 40 hex chars) |
 | `--market <market>` | no | `paper` | `paper` or `live` |
-| `--interval <seconds>` | no | `10` | Poll interval in seconds |
+| `--interval <seconds>` | no | `10` | Poll interval in seconds (1-3600) |
 
 ---
 

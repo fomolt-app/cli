@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { success } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
+import { validateTokenAddress, validatePositiveNumber, validateLimit } from "../validate";
 
 export async function handlePaperPrice(
   opts: { token: string },
@@ -78,7 +79,7 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .command("price")
     .description("Look up token price by contract address")
     .requiredOption("--token <address>", "Token contract address")
-    .action(async (opts) => handlePaperPrice({ token: opts.token }, getContext()));
+    .action(async (opts) => handlePaperPrice({ token: validateTokenAddress(opts.token) }, getContext()));
 
   cmd
     .command("trade")
@@ -88,7 +89,12 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .option("--usdc <amount>", "USDC to spend (buy orders)")
     .option("--quantity <amount>", "Token quantity to sell (sell orders)")
     .option("--note <text>", "Trade note")
-    .action(async (opts) => handlePaperTrade(opts, getContext()));
+    .action(async (opts) => {
+      validateTokenAddress(opts.token);
+      if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
+      if (opts.quantity) validatePositiveNumber(opts.quantity, "--quantity");
+      return handlePaperTrade(opts, getContext());
+    });
 
   cmd
     .command("portfolio")
@@ -105,8 +111,10 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .option("--start-date <date>", "Filter from ISO datetime")
     .option("--end-date <date>", "Filter to ISO datetime")
     .option("--sort <order>", "Sort order (asc/desc)")
-    .action(async (opts) =>
-      handlePaperTrades(
+    .action(async (opts) => {
+      if (opts.limit) validateLimit(opts.limit);
+      if (opts.token) validateTokenAddress(opts.token);
+      return handlePaperTrades(
         {
           cursor: opts.cursor,
           limit: opts.limit,
@@ -117,8 +125,8 @@ export function paperCommands(getContext: () => CmdContext): Command {
           sort: opts.sort,
         },
         getContext()
-      )
-    );
+      );
+    });
 
   cmd
     .command("performance")
@@ -130,7 +138,7 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .description("Generate PnL card image for a position")
     .requiredOption("--token <address>", "Token contract address")
     .action(async (opts) =>
-      handlePaperPnlImage({ token: opts.token }, getContext())
+      handlePaperPnlImage({ token: validateTokenAddress(opts.token) }, getContext())
     );
 
   return cmd;

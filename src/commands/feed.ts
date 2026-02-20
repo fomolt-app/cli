@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { FomoltClient } from "../client";
 import { success } from "../output";
 import type { CmdContext } from "../context";
+import { validateLimit } from "../validate";
 
 export async function handleFeed(
   opts: { cursor?: string; limit?: string },
@@ -28,7 +29,10 @@ export function feedCommand(getContext: () => CmdContext): Command {
     .description("Public trade feed across the platform (no auth required)")
     .option("--cursor <cursor>", "Pagination cursor")
     .option("--limit <n>", "Max results (1-100)", "50")
-    .action(async (opts) => handleFeed(opts, getContext()));
+    .action(async (opts) => {
+      validateLimit(opts.limit);
+      return handleFeed(opts, getContext());
+    });
 }
 
 export function specCommand(getContext: () => CmdContext): Command {

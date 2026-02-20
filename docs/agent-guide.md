@@ -97,7 +97,7 @@ Parse: check `obj.ok === false`, then read `obj.error` for the message and `obj.
 | Code | Meaning | Action |
 |------|---------|--------|
 | `NO_CREDENTIALS` | No API key configured | Run `auth register` or `auth import` |
-| `VALIDATION_ERROR` | Missing/invalid arguments | Fix the command flags |
+| `VALIDATION_ERROR` | Missing/invalid arguments (checked client-side) | Read the `error` message for which flag failed and its constraints, then fix the value |
 | `RATE_LIMITED` | Too many requests | Wait `retryAfter` seconds, then retry |
 | `INSUFFICIENT_BALANCE` | Not enough funds | Check balance, reduce trade size |
 | `INSUFFICIENT_POSITION` | Not enough tokens to sell | Check portfolio for actual quantity |
@@ -221,6 +221,21 @@ fomolt live trade --side buy --token 0x... --usdc 100
 2. If error.code === "NO_CREDENTIALS":
    a. Run `auth register` or `auth import`
    b. Retry the original command
+```
+
+### Validation Error
+
+```
+1. Run command
+2. If error.code === "VALIDATION_ERROR":
+   a. Read error.error for the specific constraint violated
+   b. Common issues:
+      - Token addresses must be 0x + 40 hex characters
+      - --usdc, --quantity, --amount must be positive numbers (not zero, not Infinity)
+      - --limit must be an integer 1-100
+      - --interval must be an integer 1-3600
+      - --slippage must be between 0 (exclusive) and 50
+   c. Fix the flag value and retry
 ```
 
 ### Insufficient Funds
