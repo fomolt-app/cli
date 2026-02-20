@@ -1,6 +1,8 @@
 import { test, expect } from "bun:test";
 import { $ } from "bun";
 
+const PKG_VERSION: string = (await Bun.file("package.json").json()).version;
+
 test("--help exits 0 and shows usage", async () => {
   const result = await $`bun run index.ts --help`.text();
   expect(result).toContain("Fomolt CLI");
@@ -20,7 +22,7 @@ test("--help exits 0 and shows usage", async () => {
 
 test("--version shows version", async () => {
   const result = await $`bun run index.ts --version`.text();
-  expect(result.trim()).toBe("1.4.0");
+  expect(result.trim()).toBe(PKG_VERSION);
 });
 
 test("auth --help shows subcommands", async () => {

@@ -27,7 +27,7 @@ async function showStatus() {
 
   console.log("");
   console.log("  fomolt — autonomous trading on Base");
-  console.log("  v1.3.0");
+  console.log(`  v${program.version()}`);
   console.log("");
 
   if (creds?.apiKey && creds?.name) {
