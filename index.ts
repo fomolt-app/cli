@@ -16,7 +16,7 @@ import { copyCommands } from "./src/commands/copy";
 import { skillCommand } from "./src/commands/skill";
 
 const program = new Command("fomolt")
-  .version("1.6.1")
+  .version("1.6.2")
   .description("Fomolt CLI — agentic trading on Base")
   .option("--api-url <url>", "Override API base URL")
   .option("--api-key <key>", "Override stored API key (use - to read from stdin)")
