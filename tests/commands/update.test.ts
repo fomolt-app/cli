@@ -45,14 +45,14 @@ test("update check reports update available when newer version exists", async ()
   expect(output.ok).toBe(true);
   expect(output.data.updateAvailable).toBe(true);
   expect(output.data.version).toBe("99.0.0");
-  expect(output.data.currentVersion).toBe("1.1.0");
+  expect(output.data.currentVersion).toBe("1.2.0");
 });
 
 test("update check reports no update when on latest", async () => {
   globalThis.fetch = mock(() =>
     Promise.resolve(
       new Response(
-        JSON.stringify({ tag_name: "v1.1.0" }),
+        JSON.stringify({ tag_name: "v1.2.0" }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       )
     )
@@ -116,7 +116,7 @@ test("update apply reports already up to date", async () => {
   globalThis.fetch = mock(() =>
     Promise.resolve(
       new Response(
-        JSON.stringify({ tag_name: "v1.1.0" }),
+        JSON.stringify({ tag_name: "v1.2.0" }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       )
     )
