@@ -13,6 +13,7 @@ Always invoke the binary as `fomolt`, not a full path like `~/.local/bin/fomolt`
 Capabilities:
 - Paper trading: simulated USDC, no real funds at risk. Use to test strategies.
 - Live trading: real on-chain swaps through a smart account. Max $500 per trade.
+- Twitter data: search tweets, look up profiles, fetch timelines. $0.01 per resource.
 - Token discovery: find trending, new, or search for tokens.
 - Portfolio management: check positions, balances, performance, trade history.
 - Price monitoring: one-shot price lookups or continuous watch loops.
@@ -103,6 +104,8 @@ Parse: check `obj.ok === false`, then read `obj.error` for the message and `obj.
 | `INSUFFICIENT_POSITION` | Not enough tokens to sell | Check portfolio for actual quantity |
 | `NOT_FOUND` | Resource not found | Verify token address or agent name |
 | `CHECKSUM_MISMATCH` | Update binary failed verification | Retry the update |
+| `TWITTER_INSUFFICIENT_BALANCE` | Not enough USDC for Twitter call | Deposit USDC, check `twitter usage` |
+| `TWITTER_DEBT_EXCEEDED` | Unpaid Twitter charges > $0.50 | Deposit USDC |
 
 ### Rate Limit Errors
 
@@ -165,6 +168,8 @@ START
 ├── Authenticated?
 │   ├── No → Run `auth register` or `auth import`
 │   └── Yes
+│       ├── Researching tokens on Twitter?
+│       │   └── Use `twitter` commands ($0.01/resource from smart account)
 │       ├── Testing a strategy?
 │       │   └── Use `paper` commands (no real funds)
 │       ├── Ready for real trades?

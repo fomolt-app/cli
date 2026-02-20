@@ -17,6 +17,7 @@ test("--help exits 0 and shows usage", async () => {
   expect(result).toContain("config");
   expect(result).toContain("agent");
   expect(result).toContain("copy");
+  expect(result).toContain("twitter");
   expect(result).toContain("--agent");
 });
 
