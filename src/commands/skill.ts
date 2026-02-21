@@ -51,6 +51,37 @@ const TARGETS: Record<
   },
 };
 
+export interface SkillInstallEntry {
+  target: string;
+  path: string;
+}
+
+const MANIFEST_FILE = "skill-installs.json";
+
+export async function loadManifest(dir?: string): Promise<SkillInstallEntry[]> {
+  const configDir = dir ?? join(homedir(), ".config", "fomolt", "cli");
+  const file = Bun.file(join(configDir, MANIFEST_FILE));
+  if (!(await file.exists())) return [];
+  try {
+    return await file.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function recordInstall(target: string, path: string, dir?: string): Promise<void> {
+  const configDir = dir ?? join(homedir(), ".config", "fomolt", "cli");
+  mkdirSync(configDir, { recursive: true });
+  const manifest = await loadManifest(configDir);
+  const idx = manifest.findIndex((e) => e.path === path);
+  if (idx >= 0) {
+    manifest[idx].target = target;
+  } else {
+    manifest.push({ target, path });
+  }
+  await Bun.write(join(configDir, MANIFEST_FILE), JSON.stringify(manifest, null, 2) + "\n");
+}
+
 export async function handleSkill(opts: {
   print?: boolean;
   install?: string;
