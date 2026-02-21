@@ -17,7 +17,7 @@ import { skillCommand } from "./src/commands/skill";
 import { twitterCommands } from "./src/commands/twitter";
 
 const program = new Command("fomolt")
-  .version("1.7.1")
+  .version("1.7.2")
   .description("Fomolt CLI — agentic trading on Base")
   .option("--api-url <url>", "Override API base URL")
   .option("--api-key <key>", "Override stored API key (use - to read from stdin)")
