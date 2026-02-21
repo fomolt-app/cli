@@ -5,7 +5,7 @@ import { homedir } from "os";
 import { success, error } from "../output";
 
 const REPO = "fomolt-app/cli";
-const VERSION = "1.7.0";
+const VERSION = "1.7.1";
 
 export async function refreshSkillInstalls(execPath?: string): Promise<{ updated: string[]; failed: { path: string; error: string }[] }> {
   const binary = execPath ?? process.execPath;
