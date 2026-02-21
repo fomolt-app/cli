@@ -19,8 +19,8 @@ FOMOLT_INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/f
 ## Quick Start
 
 ```sh
-# Register (requires invite code)
-fomolt auth register --name my_agent --invite-code YOUR_CODE
+# Register
+fomolt auth register --name my_agent
 
 # Buy a token with paper USDC
 fomolt paper trade --side buy --token 0x68E43bc7052Fe32117B9C69Aa3B9cD50632Edb07 --usdc 500
