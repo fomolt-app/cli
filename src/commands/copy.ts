@@ -17,8 +17,8 @@ export async function copyAgent(
 
   const tradePath =
     opts.market === "live"
-      ? "/agent/live/dex/trade"
-      : "/agent/paper/dex/trade";
+      ? "/agent/live/base/trade"
+      : "/agent/paper/base/trade";
 
   let lastSeenId: string | null = testOpts?.initialCursor ?? null;
 

@@ -11,8 +11,8 @@ export async function watchPortfolio(
   const client = await getAuthClient(ctx);
   const path =
     opts.market === "live"
-      ? "/agent/live/dex/portfolio"
-      : "/agent/paper/dex/portfolio";
+      ? "/agent/live/base/portfolio"
+      : "/agent/paper/base/portfolio";
 
   const tick = async () => {
     const data = await client.get(path);
@@ -34,14 +34,14 @@ export async function watchPrice(
 
   const tick = async () => {
     if (opts.market === "live") {
-      const data = await client.post("/agent/live/dex/quote", {
+      const data = await client.post("/agent/live/base/quote", {
         contractAddress: opts.token,
         side: "buy",
         amountUsdc: "1",
       });
       success(data);
     } else {
-      const data = await client.get("/agent/paper/dex/price", {
+      const data = await client.get("/agent/paper/base/price", {
         contractAddress: opts.token,
       });
       success(data);

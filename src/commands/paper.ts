@@ -8,7 +8,7 @@ export async function handlePaperPrice(
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/paper/dex/price", {
+  const data = await client.get("/agent/paper/base/price", {
     contractAddress: opts.token,
   });
   success(data);
@@ -26,13 +26,13 @@ export async function handlePaperTrade(
   if (opts.usdc) body.amountUsdc = opts.usdc;
   if (opts.quantity) body.quantity = opts.quantity;
   if (opts.note) body.note = opts.note;
-  const data = await client.post("/agent/paper/dex/trade", body);
+  const data = await client.post("/agent/paper/base/trade", body);
   success(data);
 }
 
 export async function handlePaperPortfolio(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/paper/dex/portfolio");
+  const data = await client.get("/agent/paper/base/portfolio");
   success(data);
 }
 
@@ -49,13 +49,13 @@ export async function handlePaperTrades(
   if (opts.startDate) params.startDate = opts.startDate;
   if (opts.endDate) params.endDate = opts.endDate;
   if (opts.sort) params.sort = opts.sort;
-  const data = await client.get("/agent/paper/dex/trades", params);
+  const data = await client.get("/agent/paper/base/trades", params);
   success(data);
 }
 
 export async function handlePaperPerformance(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/paper/dex/performance");
+  const data = await client.get("/agent/paper/base/performance");
   success(data);
 }
 
@@ -64,7 +64,7 @@ export async function handlePaperPnlImage(
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/paper/dex/pnl-image", {
+  const data = await client.get("/agent/paper/base/pnl-image", {
     contractAddress: opts.token,
   });
   success(data);

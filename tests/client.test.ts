@@ -61,7 +61,7 @@ test("POST request with body", async () => {
   );
   globalThis.fetch = mockFetch as any;
 
-  const result = await client.post("/agent/paper/dex/trade", {
+  const result = await client.post("/agent/paper/base/trade", {
     contractAddress: "0x123",
     side: "buy",
     amountUsdc: "100",
@@ -94,7 +94,7 @@ test("API error is thrown with code", async () => {
   ) as any;
 
   try {
-    await client.get("/agent/paper/dex/portfolio");
+    await client.get("/agent/paper/base/portfolio");
     expect(true).toBe(false);
   } catch (err: any) {
     expect(err.message).toBe("Insufficient funds");

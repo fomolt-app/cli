@@ -92,7 +92,7 @@ test("second tick detects and mirrors new trades", async () => {
 
   // Verify mirror trade was sent to paper endpoint
   const mirrorCall = mockFetch.mock.calls[1];
-  expect(mirrorCall[0]).toContain("/agent/paper/dex/trade");
+  expect(mirrorCall[0]).toContain("/agent/paper/base/trade");
   const mirrorBody = JSON.parse(mirrorCall[1].body);
   expect(mirrorBody.contractAddress).toBe("0xnew");
   expect(mirrorBody.side).toBe("buy");
@@ -497,5 +497,5 @@ test("live market uses live trade endpoint", async () => {
   );
 
   const mirrorCall = mockFetch.mock.calls[1];
-  expect(mirrorCall[0]).toContain("/agent/live/dex/trade");
+  expect(mirrorCall[0]).toContain("/agent/live/base/trade");
 });

@@ -13,19 +13,19 @@ export async function handleLiveTokens(
   else if (opts.mode) params.mode = opts.mode;
   if (opts.term) params.term = opts.term;
   if (opts.limit) params.limit = opts.limit;
-  const data = await client.get("/agent/live/dex/tokens", params);
+  const data = await client.get("/agent/live/base/tokens", params);
   success(data);
 }
 
 export async function handleLiveBalance(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/live/dex/balance");
+  const data = await client.get("/agent/live/base/balance");
   success(data);
 }
 
 export async function handleLiveDeposit(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/live/dex/deposit");
+  const data = await client.get("/agent/live/base/deposit");
   success(data);
 }
 
@@ -41,7 +41,7 @@ export async function handleLiveQuote(
   if (opts.usdc) body.amountUsdc = opts.usdc;
   if (opts.quantity) body.quantity = opts.quantity;
   if (opts.slippage) body.slippage = opts.slippage;
-  const data = await client.post("/agent/live/dex/quote", body);
+  const data = await client.post("/agent/live/base/quote", body);
   success(data);
 }
 
@@ -58,7 +58,7 @@ export async function handleLiveTrade(
   if (opts.quantity) body.quantity = opts.quantity;
   if (opts.slippage) body.slippage = opts.slippage;
   if (opts.note) body.note = opts.note;
-  const data = await client.post("/agent/live/dex/trade", body);
+  const data = await client.post("/agent/live/base/trade", body);
   success(data);
 }
 
@@ -67,7 +67,7 @@ export async function handleLiveWithdraw(
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.post("/agent/live/dex/withdraw", {
+  const data = await client.post("/agent/live/base/withdraw", {
     asset: opts.currency,
     amount: opts.amount,
     to: opts.to,
@@ -77,7 +77,7 @@ export async function handleLiveWithdraw(
 
 export async function handleLivePortfolio(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/live/dex/portfolio");
+  const data = await client.get("/agent/live/base/portfolio");
   success(data);
 }
 
@@ -95,13 +95,13 @@ export async function handleLiveTrades(
   if (opts.startDate) params.startDate = opts.startDate;
   if (opts.endDate) params.endDate = opts.endDate;
   if (opts.sort) params.sort = opts.sort;
-  const data = await client.get("/agent/live/dex/trades", params);
+  const data = await client.get("/agent/live/base/trades", params);
   success(data);
 }
 
 export async function handleLivePerformance(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/live/dex/performance");
+  const data = await client.get("/agent/live/base/performance");
   success(data);
 }
 
@@ -116,7 +116,7 @@ export async function handleLiveTokenInfo(
 
 export async function handleLiveSessionKey(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.post("/agent/live/dex/session-key");
+  const data = await client.post("/agent/live/base/session-key");
   success(data);
 }
 
