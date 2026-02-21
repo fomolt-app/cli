@@ -7,6 +7,23 @@ import { success, error } from "../output";
 const REPO = "fomolt-app/cli";
 const VERSION = "1.7.0";
 
+export async function refreshSkillInstalls(execPath?: string): Promise<{ updated: string[]; failed: { path: string; error: string }[] }> {
+  const binary = execPath ?? process.execPath;
+  try {
+    const proc = Bun.spawn([binary, "skill", "--refresh-all"], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const text = await new Response(proc.stdout).text();
+    await proc.exited;
+    const output = JSON.parse(text);
+    if (output.ok) return output.data;
+    return { updated: [], failed: [] };
+  } catch {
+    return { updated: [], failed: [] };
+  }
+}
+
 interface ReleaseInfo {
   tag: string;
   version: string;
@@ -123,10 +140,13 @@ export async function handleUpdate(): Promise<void> {
   chmodSync(tmpPath, 0o755);
   renameSync(tmpPath, execPath);
 
+  const skillRefresh = await refreshSkillInstalls(execPath);
+
   success({
     message: `Updated from ${VERSION} to ${info.version}`,
     previousVersion: VERSION,
     newVersion: info.version,
+    skillRefresh,
   });
 }
 
