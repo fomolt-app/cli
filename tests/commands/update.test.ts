@@ -133,3 +133,13 @@ test("update apply reports already up to date", async () => {
   expect(output.ok).toBe(true);
   expect(output.data.message).toBe("Already up to date");
 });
+
+test("refreshSkillInstalls returns updated and failed arrays", async () => {
+  // Test the underlying refreshAll directly since spawning requires a compiled binary
+  const { refreshAll } = await import("../../src/commands/skill");
+  const result = await refreshAll();
+  expect(result).toHaveProperty("updated");
+  expect(result).toHaveProperty("failed");
+  expect(Array.isArray(result.updated)).toBe(true);
+  expect(Array.isArray(result.failed)).toBe(true);
+});
