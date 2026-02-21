@@ -82,12 +82,46 @@ export async function recordInstall(target: string, path: string, dir?: string):
   await Bun.write(join(configDir, MANIFEST_FILE), JSON.stringify(manifest, null, 2) + "\n");
 }
 
+export async function refreshAll(configDir?: string): Promise<{ updated: string[]; failed: { path: string; error: string }[] }> {
+  const manifest = await loadManifest(configDir);
+  const updated: string[] = [];
+  const failed: { path: string; error: string }[] = [];
+
+  for (const entry of manifest) {
+    const target = TARGETS[entry.target];
+    if (!target) {
+      failed.push({ path: entry.path, error: `Unknown target: ${entry.target}` });
+      continue;
+    }
+    try {
+      const dir = join(entry.path, "..");
+      if (!existsSync(dir)) {
+        failed.push({ path: entry.path, error: "Directory does not exist" });
+        continue;
+      }
+      await Bun.write(entry.path, target.format(skillContent));
+      updated.push(entry.path);
+    } catch (err: any) {
+      failed.push({ path: entry.path, error: err.message });
+    }
+  }
+
+  return { updated, failed };
+}
+
 export async function handleSkill(opts: {
   print?: boolean;
   install?: string;
-}): Promise<void> {
+  refreshAll?: boolean;
+}, configDir?: string, cwd?: string): Promise<void> {
   if (opts.print) {
     process.stdout.write(skillContent);
+    return;
+  }
+
+  if (opts.refreshAll) {
+    const results = await refreshAll(configDir);
+    success(results);
     return;
   }
 
@@ -104,10 +138,10 @@ export async function handleSkill(opts: {
 
     const fullPath =
       typeof target.path === "function"
-        ? target.path(process.cwd())
+        ? target.path(cwd ?? process.cwd())
         : target.path.startsWith("/")
           ? target.path
-          : join(process.cwd(), target.path);
+          : join(cwd ?? process.cwd(), target.path);
     const dir = join(fullPath, "..");
     mkdirSync(dir, { recursive: true });
 
@@ -117,6 +151,7 @@ export async function handleSkill(opts: {
       if (existing.includes("Fomolt CLI")) {
         // Already installed — overwrite with latest version
         await Bun.write(fullPath, target.format(skillContent));
+        await recordInstall(opts.install.toLowerCase(), fullPath, configDir);
         success({ path: fullPath, target: opts.install, updated: true });
         return;
       }
@@ -129,6 +164,7 @@ export async function handleSkill(opts: {
       await Bun.write(fullPath, target.format(skillContent));
     }
 
+    await recordInstall(opts.install.toLowerCase(), fullPath, configDir);
     success({
       path: fullPath,
       target: opts.install,
@@ -161,5 +197,6 @@ export function skillCommand(): Command {
       "--install <target>",
       `Install into project directory for an AI agent: ${valid}`
     )
+    .option("--refresh-all", "Refresh all installed SKILL.md copies (internal)")
     .action(async (opts) => handleSkill(opts));
 }
