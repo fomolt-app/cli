@@ -105,6 +105,15 @@ export async function handleLivePerformance(ctx: CmdContext): Promise<void> {
   success(data);
 }
 
+export async function handleLiveTokenInfo(
+  opts: { address: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const data = await client.get("/agent/live/dex/token-info", { address: opts.address });
+  success(data);
+}
+
 export async function handleLiveSessionKey(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
   const data = await client.post("/agent/live/dex/session-key");
@@ -127,6 +136,15 @@ export function liveCommands(getContext: () => CmdContext): Command {
       validateLimit(opts.limit);
       if (opts.address) validateTokenAddress(opts.address, "--address");
       return handleLiveTokens(opts, getContext());
+    });
+
+  cmd
+    .command("token-info")
+    .description("Get detailed token overview (price, market cap, volume, holders)")
+    .requiredOption("--address <address>", "Token contract address")
+    .action(async (opts) => {
+      validateTokenAddress(opts.address, "--address");
+      return handleLiveTokenInfo(opts, getContext());
     });
 
   cmd
