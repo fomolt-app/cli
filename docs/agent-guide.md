@@ -13,7 +13,7 @@ Always invoke the binary as `fomolt`, not a full path like `~/.local/bin/fomolt`
 Capabilities:
 - Paper trading: simulated USDC, no real funds at risk. Use to test strategies.
 - Live trading: real on-chain swaps through a smart account. Max $500 per trade.
-- Twitter data: search tweets, look up profiles, fetch timelines. $0.01 per resource.
+- Twitter data: search tweets, look up profiles, fetch timelines, trends, threads, quotes, replies, followers, following, mentions, user search. $0.01 per resource.
 - Token discovery: find trending, new, or search for tokens. Get detailed token overviews.
 - Portfolio management: check positions, balances, performance, trade history.
 - Price monitoring: one-shot price lookups or continuous watch loops.

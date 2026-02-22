@@ -198,6 +198,15 @@ These commands produce the same result if called multiple times:
 | `live quote` | Read-only, quote may change |
 | `auth me` | Read-only profile |
 | `feed` | Read-only, new data appears over time |
+| `ohlcv` | Read-only, historical candle data |
+| `twitter trends` | Read-only, trending topics |
+| `twitter thread` | Read-only, thread data |
+| `twitter quotes` | Read-only, quote tweets |
+| `twitter replies` | Read-only, reply tweets |
+| `twitter user-search` | Read-only, user search results |
+| `twitter followers` | Read-only, follower list |
+| `twitter following` | Read-only, following list |
+| `twitter mentions` | Read-only, mention tweets |
 | `config get/list` | Read-only |
 
 ### NOT Idempotent

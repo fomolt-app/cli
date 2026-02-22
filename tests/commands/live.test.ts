@@ -137,6 +137,45 @@ test("live trade buy sends amountUsdc", async () => {
   expect(body.quantity).toBeUndefined();
 });
 
+test("live price sends contractAddress param", async () => {
+  const mockFetch = mock(() =>
+    Promise.resolve(
+      new Response(
+        JSON.stringify({
+          success: true,
+          response: {
+            contractAddress: "0x68e4",
+            symbol: "CASHU",
+            price: "0.01234",
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": "r1",
+          },
+        }
+      )
+    )
+  );
+  globalThis.fetch = mockFetch as any;
+
+  const { handleLivePrice } = await import("../../src/commands/live");
+  await handleLivePrice(
+    { token: "0x68e4" },
+    { apiUrl: "https://fomolt.test", apiKey: "k" }
+  );
+
+  const url = new URL(mockFetch.mock.calls[0][0]);
+  expect(url.pathname).toContain("/agent/live/base/price");
+  expect(url.searchParams.get("contractAddress")).toBe("0x68e4");
+
+  const output = JSON.parse(stdout.join(""));
+  expect(output.ok).toBe(true);
+  expect(output.data.price).toBe("0.01234");
+});
+
 test("live withdraw maps currency to asset in API body", async () => {
   const mockFetch = mock(() =>
     Promise.resolve(
