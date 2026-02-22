@@ -7,7 +7,7 @@ import { authCommands } from "./src/commands/auth";
 import { paperCommands } from "./src/commands/paper";
 import { liveCommands } from "./src/commands/live";
 import { achievementsCommand, leaderboardCommand } from "./src/commands/social";
-import { feedCommand, specCommand } from "./src/commands/feed";
+import { feedCommand, specCommand, ohlcvCommand } from "./src/commands/feed";
 import { watchCommands } from "./src/commands/watch";
 import { configCommands } from "./src/commands/config";
 import { updateCommands } from "./src/commands/update";
@@ -116,6 +116,7 @@ async function main() {
   program.addCommand(leaderboardCommand(getContext));
   program.addCommand(feedCommand(getContext));
   program.addCommand(specCommand(getContext));
+  program.addCommand(ohlcvCommand(getContext));
   program.addCommand(agentCommands(getContext));
   program.addCommand(copyCommands(getContext));
   program.addCommand(twitterCommands(getContext));

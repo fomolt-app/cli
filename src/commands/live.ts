@@ -4,7 +4,7 @@ import { getAuthClient, type CmdContext } from "../context";
 import { validateTokenAddress, validatePositiveNumber, validateLimit, validateSlippage } from "../validate";
 
 export async function handleLiveTokens(
-  opts: { mode?: string; term?: string; address?: string; limit?: string },
+  opts: { mode?: string; term?: string; address?: string; limit?: string; minLiquidity?: string; minVolume1h?: string; minHolders?: string },
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
@@ -13,6 +13,9 @@ export async function handleLiveTokens(
   else if (opts.mode) params.mode = opts.mode;
   if (opts.term) params.term = opts.term;
   if (opts.limit) params.limit = opts.limit;
+  if (opts.minLiquidity) params.min_liquidity = opts.minLiquidity;
+  if (opts.minVolume1h) params.min_volume_1h_usd = opts.minVolume1h;
+  if (opts.minHolders) params.min_holder = opts.minHolders;
   const data = await client.get("/agent/live/base/tokens", params);
   success(data);
 }
@@ -120,6 +123,15 @@ export async function handleLiveSessionKey(ctx: CmdContext): Promise<void> {
   success(data);
 }
 
+export async function handleLivePrice(
+  opts: { token: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const data = await client.get("/agent/live/base/price", { contractAddress: opts.token });
+  success(data);
+}
+
 export function liveCommands(getContext: () => CmdContext): Command {
   const cmd = new Command("live").description(
     "Live on-chain trading on Base"
@@ -132,9 +144,15 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .option("--term <text>", "Search term (required for mode=search)")
     .option("--address <address>", "Exact contract address lookup (overrides mode)")
     .option("--limit <n>", "Max results (1-100)", "20")
+    .option("--min-liquidity <amount>", "Minimum liquidity filter (mode=new)")
+    .option("--min-volume-1h <amount>", "Minimum 1h volume in USD filter (mode=new)")
+    .option("--min-holders <count>", "Minimum holder count filter (mode=new)")
     .action(async (opts) => {
       validateLimit(opts.limit);
       if (opts.address) validateTokenAddress(opts.address, "--address");
+      if (opts.minLiquidity) validatePositiveNumber(opts.minLiquidity, "--min-liquidity");
+      if (opts.minVolume1h) validatePositiveNumber(opts.minVolume1h, "--min-volume-1h");
+      if (opts.minHolders) validatePositiveNumber(opts.minHolders, "--min-holders");
       return handleLiveTokens(opts, getContext());
     });
 
@@ -240,6 +258,15 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .command("performance")
     .description("View live performance metrics")
     .action(async () => handleLivePerformance(getContext()));
+
+  cmd
+    .command("price")
+    .description("Look up the current price of a token")
+    .requiredOption("--token <address>", "Token contract address")
+    .action(async (opts) => {
+      validateTokenAddress(opts.token);
+      return handleLivePrice(opts, getContext());
+    });
 
   cmd
     .command("session-key")
