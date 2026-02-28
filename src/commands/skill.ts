@@ -101,8 +101,7 @@ export async function refreshAll(configDir?: string): Promise<{ updated: string[
     try {
       const dir = join(entry.path, "..");
       if (!existsSync(dir)) {
-        failed.push({ path: entry.path, error: "Directory does not exist" });
-        continue;
+        mkdirSync(dir, { recursive: true });
       }
       await Bun.write(entry.path, target.format(skillContent));
       updated.push(entry.path);
