@@ -10,14 +10,21 @@ All commands output JSON, so they work naturally with `jq` and shell pipelines.
 # Get the first position's token address
 fomolt paper portfolio | jq -r '.data.positions[0].token'
 
-# Get your USDC balance
+# Get your USDC balance (Base)
 fomolt live balance | jq -r '.data.usdc'
 
-# List trending token addresses
-fomolt live tokens --mode trending | jq -r '.data[].contractAddress'
+# Get your SOL balance (Solana)
+fomolt live balance | jq -r '.data.sol'
 
-# Check if a trade succeeded
+# List trending token addresses (Base — contractAddress, Solana — mintAddress)
+fomolt live tokens --mode trending | jq -r '.data[].contractAddress'
+fomolt live tokens --mode trending | jq -r '.data[].mintAddress'
+
+# Check if a trade succeeded (Base)
 fomolt paper trade --side buy --token 0x... --usdc 100 | jq '.ok'
+
+# Check if a trade succeeded (Solana)
+fomolt paper trade --side buy --token 7GCi... --sol 5 | jq '.ok'
 
 # Get the error code from a failed command
 fomolt paper trade --side sell --token 0x... --quantity 999999 2>&1 | jq -r '.code'
@@ -26,12 +33,19 @@ fomolt paper trade --side sell --token 0x... --quantity 999999 2>&1 | jq -r '.co
 ### Chaining Commands
 
 ```sh
-# Buy, then immediately check portfolio
+# Buy, then immediately check portfolio (Base)
 fomolt paper trade --side buy --token 0x... --usdc 500 && fomolt paper portfolio
+
+# Buy, then immediately check portfolio (Solana)
+fomolt paper trade --side buy --token 7GCi... --sol 5 && fomolt paper portfolio
 
 # Get a quote, then trade (manually verify the quote output first)
 fomolt live quote --side buy --token 0x... --usdc 50
 fomolt live trade --side buy --token 0x... --usdc 50
+
+# Solana equivalent
+fomolt live quote --side buy --token 7GCi... --sol 2
+fomolt live trade --side buy --token 7GCi... --sol 2
 ```
 
 ## Stdin API Key
@@ -161,7 +175,7 @@ fomolt config set apiUrl https://fomolt.com
 These commands are read-only and can run concurrently:
 
 - `paper portfolio` / `live portfolio`
-- `paper price` / `live quote` (with `side=buy`, `amountUsdc=1`)
+- `paper price` / `live quote` (with `side=buy`, `amountUsdc=1` or `amountSol=0.1`)
 - `paper trades` / `live trades`
 - `paper performance` / `live performance`
 - `live balance`

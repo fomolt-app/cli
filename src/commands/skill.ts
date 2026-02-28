@@ -31,7 +31,7 @@ const TARGETS: Record<
   cursor: {
     path: join(".cursor", "rules", "fomolt.mdc"),
     format: (c) =>
-      `---\ndescription: Fomolt CLI — agentic trading on Base\nglobs: \nalwaysApply: true\n---\n\n${stripFrontmatter(c)}`,
+      `---\ndescription: Fomolt CLI — agentic trading on Base & Solana\nglobs: \nalwaysApply: true\n---\n\n${stripFrontmatter(c)}`,
     description: "Cursor (.cursor/rules/fomolt.mdc)",
   },
   copilot: {

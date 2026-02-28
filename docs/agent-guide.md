@@ -1,20 +1,20 @@
 # Agent Guide
 
-How to give an AI agent the Fomolt CLI as a tool for autonomous trading on Base.
+How to give an AI agent the Fomolt CLI as a tool for autonomous trading on Base & Solana.
 
 ## System Prompt Snippet
 
 Drop this block into your agent's system prompt:
 
 ```
-You have access to the `fomolt` CLI for trading tokens on Base (an Ethereum L2).
+You have access to the `fomolt` CLI for trading tokens on Base (an Ethereum L2) and Solana.
 Always invoke the binary as `fomolt`, not a full path like `~/.local/bin/fomolt`.
 
 Capabilities:
-- Paper trading: simulated USDC, no real funds at risk. Use to test strategies.
-- Live trading: real on-chain swaps through a smart account. Max $500 per trade.
+- Paper trading: simulated USDC (Base) or SOL (Solana), no real funds at risk. Use to test strategies.
+- Live trading: real on-chain swaps through a smart account. Max 500 USDC per trade (Base) or 10 SOL per trade (Solana).
 - Twitter data: search tweets, look up profiles, fetch timelines, trends, threads, quotes, replies, followers, following, mentions, user search. $0.01 per resource.
-- Token discovery: find trending, new, or search for tokens. Get detailed token overviews.
+- Token discovery: find trending, new, or search for tokens on both chains. Get detailed token overviews.
 - Portfolio management: check positions, balances, performance, trade history.
 - Price monitoring: one-shot price lookups or continuous watch loops.
 
@@ -24,9 +24,10 @@ Output format:
 - Rate limit errors include "retryAfter" (seconds) in the error object.
 
 Key constraints:
-- Live buy trades are capped at 500 USDC per trade.
-- Buy requires --usdc (amount to spend). Sell requires --quantity (tokens to sell).
-- Token addresses are 0x-prefixed EVM contract addresses on Base.
+- Live buy trades are capped at 500 USDC (Base) or 10 SOL (Solana) per trade.
+- Base buys require --usdc (amount to spend). Solana buys require --sol (amount to spend). Sells require --quantity (tokens to sell).
+- Base token addresses are 0x-prefixed EVM contract addresses. Solana token addresses are base58 mint addresses (32-44 chars).
+- Default slippage is 5% for Base, 10% for Solana (pump.fun tokens are volatile).
 - Credentials are stored locally at ~/.config/fomolt/cli/credentials.json.
 ```
 
@@ -39,13 +40,13 @@ Key constraints:
   "type": "function",
   "function": {
     "name": "fomolt",
-    "description": "Execute a Fomolt CLI command for trading tokens on Base. Returns JSON.",
+    "description": "Execute a Fomolt CLI command for trading tokens on Base & Solana. Returns JSON.",
     "parameters": {
       "type": "object",
       "properties": {
         "args": {
           "type": "string",
-          "description": "CLI arguments, e.g. 'paper trade --side buy --token 0x... --usdc 100'"
+          "description": "CLI arguments, e.g. 'paper trade --side buy --token 0x... --usdc 100' (Base) or 'paper trade --side buy --token 7GCi... --sol 5' (Solana)"
         }
       },
       "required": ["args"]
@@ -61,13 +62,13 @@ Your tool executor runs: `fomolt {args}` and returns the stdout/stderr output.
 ```json
 {
   "name": "fomolt",
-  "description": "Execute a Fomolt CLI command for trading tokens on Base. All output is JSON. Use 'paper' subcommands for simulated trading and 'live' for real on-chain trades.",
+  "description": "Execute a Fomolt CLI command for trading tokens on Base & Solana. All output is JSON. Use 'paper' subcommands for simulated trading and 'live' for real on-chain trades.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "args": {
         "type": "string",
-        "description": "CLI arguments, e.g. 'paper portfolio' or 'live trade --side buy --token 0x... --usdc 50'"
+        "description": "CLI arguments, e.g. 'paper portfolio' or 'live trade --side buy --token 0x... --usdc 50' (Base) or 'live trade --side buy --token 7GCi... --sol 2' (Solana)"
       }
     },
     "required": ["args"]
@@ -185,7 +186,7 @@ START
 
 Always quote before a live trade when:
 - You haven't traded this token before
-- The trade is large (>$100 USDC)
+- The trade is large (>$100 USDC or >2 SOL)
 - You need to verify the price/slippage before executing
 
 ```sh
@@ -235,8 +236,9 @@ fomolt live trade --side buy --token 0x... --usdc 100
 2. If error.code === "VALIDATION_ERROR":
    a. Read error.error for the specific constraint violated
    b. Common issues:
-      - Token addresses must be 0x + 40 hex characters
-      - --usdc, --quantity, --amount must be positive numbers (not zero, not Infinity)
+      - Base token addresses must be 0x + 40 hex characters
+      - Solana mint addresses must be 32-44 base58 characters
+      - --usdc, --sol, --quantity, --amount must be positive numbers (not zero, not Infinity)
       - --limit must be an integer 1-100
       - --interval must be an integer 1-3600
       - --slippage must be between 0 (exclusive) and 50
@@ -286,8 +288,10 @@ fomolt live tokens --mode trending --limit 5
 fomolt paper price --token 0xTOKEN_ADDRESS
 # → Note the current price
 
-# 5. Buy with paper USDC
+# 5. Buy with paper USDC (Base) or paper SOL (Solana)
 fomolt paper trade --side buy --token 0xTOKEN_ADDRESS --usdc 500
+# Or for a Solana token:
+# fomolt paper trade --side buy --token MINT_ADDRESS --sol 5
 # → Confirms the purchase, shows quantity received
 
 # 6. Check your portfolio
@@ -310,14 +314,18 @@ Once your paper strategy is profitable:
 ```sh
 # 1. Check your smart account
 fomolt live deposit
-# → Get the deposit address, send USDC or ETH on Base
+# → Get the deposit address, send USDC or ETH on Base, or SOL on Solana
 
 # 2. Verify funds arrived
 fomolt live balance
 
-# 3. Quote first
+# 3. Quote first (Base)
 fomolt live quote --side buy --token 0xTOKEN_ADDRESS --usdc 50
 
-# 4. Execute
+# 4. Execute (Base)
 fomolt live trade --side buy --token 0xTOKEN_ADDRESS --usdc 50
+
+# Or for Solana:
+# fomolt live quote --side buy --token MINT_ADDRESS --sol 2
+# fomolt live trade --side buy --token MINT_ADDRESS --sol 2
 ```

@@ -1,5 +1,27 @@
 import { error } from "./output";
 
+export type Chain = "base" | "solana";
+
+export function validateChain(value: string): Chain {
+  if (value !== "base" && value !== "solana") {
+    error(`--chain must be "base" or "solana", got "${value}"`, "VALIDATION_ERROR");
+    process.exit(1);
+  }
+  return value;
+}
+
+export function validateSolanaAddress(value: string, flag: string = "--token"): string {
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) {
+    error(`${flag} must be a valid Solana address (32-44 base58 chars), got "${value}"`, "VALIDATION_ERROR");
+    process.exit(1);
+  }
+  return value;
+}
+
+export function validateAddress(value: string, chain: Chain, flag: string = "--token"): string {
+  return chain === "base" ? validateTokenAddress(value, flag) : validateSolanaAddress(value, flag);
+}
+
 export function validateInt(
   value: string,
   flag: string,

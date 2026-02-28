@@ -1,18 +1,19 @@
 import { Command } from "commander";
 import { success } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-import { validateInt, validateTokenAddress } from "../validate";
+import { validateInt, validateChain, validateAddress, type Chain } from "../validate";
 
 export async function watchPortfolio(
-  opts: { market: string; interval?: number },
+  opts: { market: string; chain: Chain; interval?: number },
   ctx: CmdContext,
   testOpts?: { once?: boolean }
 ): Promise<void> {
   const client = await getAuthClient(ctx);
+  const prefix = opts.chain;
   const path =
     opts.market === "live"
-      ? "/agent/live/base/portfolio"
-      : "/agent/paper/base/portfolio";
+      ? `/agent/live/${prefix}/portfolio`
+      : `/agent/paper/${prefix}/portfolio`;
 
   const tick = async () => {
     const data = await client.get(path);
@@ -26,23 +27,26 @@ export async function watchPortfolio(
 }
 
 export async function watchPrice(
-  opts: { token: string; market?: string; interval?: number },
+  opts: { token: string; chain: Chain; market?: string; interval?: number },
   ctx: CmdContext,
   testOpts?: { once?: boolean }
 ): Promise<void> {
   const client = await getAuthClient(ctx);
+  const prefix = opts.chain;
+  const addrField = opts.chain === "base" ? "contractAddress" : "mintAddress";
+  const amountField = opts.chain === "base" ? "amountUsdc" : "amountSol";
 
   const tick = async () => {
     if (opts.market === "live") {
-      const data = await client.post("/agent/live/base/quote", {
-        contractAddress: opts.token,
+      const data = await client.post(`/agent/live/${prefix}/quote`, {
+        [addrField]: opts.token,
         side: "buy",
-        amountUsdc: "1",
+        [amountField]: "1",
       });
       success(data);
     } else {
-      const data = await client.get("/agent/paper/base/price", {
-        contractAddress: opts.token,
+      const data = await client.get(`/agent/paper/${prefix}/price`, {
+        [addrField]: opts.token,
       });
       success(data);
     }
@@ -62,27 +66,31 @@ export function watchCommands(getContext: () => CmdContext): Command {
   cmd
     .command("portfolio")
     .description("Watch portfolio value (one JSON line per tick)")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
     .option("--market <market>", "paper or live", "paper")
     .option("--interval <seconds>", "Poll interval in seconds", "10")
-    .action(async (opts) =>
-      watchPortfolio(
-        { market: opts.market, interval: validateInt(opts.interval, "--interval", 1, 3600) },
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      return watchPortfolio(
+        { market: opts.market, chain, interval: validateInt(opts.interval, "--interval", 1, 3600) },
         getContext()
-      )
-    );
+      );
+    });
 
   cmd
     .command("price")
     .description("Watch token price (one JSON line per tick)")
-    .requiredOption("--token <address>", "Token contract address")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("--token <address>", "Token address")
     .option("--market <market>", "paper or live", "paper")
     .option("--interval <seconds>", "Poll interval in seconds", "10")
-    .action(async (opts) =>
-      watchPrice(
-        { token: validateTokenAddress(opts.token), market: opts.market, interval: validateInt(opts.interval, "--interval", 1, 3600) },
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      return watchPrice(
+        { token: validateAddress(opts.token, chain), chain, market: opts.market, interval: validateInt(opts.interval, "--interval", 1, 3600) },
         getContext()
-      )
-    );
+      );
+    });
 
   return cmd;
 }
