@@ -9,7 +9,7 @@ metadata: { "openclaw": { "requires": { "bins": ["fomolt"] }, "emoji": "📈" } 
 You have access to the `fomolt` command-line tool for trading tokens on two blockchains:
 
 - **Base** (Ethereum L2) — trade Clanker/Uniswap V4 tokens with USDC as quote currency
-- **Solana** — trade pump.fun tokens (bonding curve + graduated AMM) with SOL as quote currency
+- **Solana** — trade Solana tokens via Trade Router (pump.fun bonding curve, PumpSwap AMM, Raydium, Orca, Meteora) with SOL as quote currency
 
 All output is machine-readable JSON. You can paper trade with simulated funds (no risk) or live trade on-chain.
 
@@ -43,8 +43,8 @@ Always check `ok` first. On success, read `data`. On error, read `code` to decid
 | `INSUFFICIENT_BALANCE` | Not enough USDC (Base) | Check balance, reduce `--usdc` amount |
 | `INSUFFICIENT_POSITION` | Not enough tokens to sell (Base) | Check portfolio for actual quantity, reduce `--quantity` |
 | `SOLANA_INSUFFICIENT_FUNDS` | Not enough SOL (Solana) | Check balance, reduce `--sol` amount or deposit SOL |
-| `SOLANA_INSUFFICIENT_POSITION` | Not enough tokens to sell (Solana) | Check portfolio for actual quantity; reduce `--quantity` (paper) or `--percent` (live) |
-| `TOKEN_NOT_PUMP_FUN` | Not a pump.fun token | Only pump.fun tokens are supported on Solana |
+| `SOLANA_INSUFFICIENT_POSITION` | Not enough tokens to sell (Solana) | Check portfolio for actual quantity; reduce `--percent` |
+| `TOKEN_NOT_PUMP_FUN` | Token not found on supported DEXes | Verify the mint address is valid and has liquidity |
 | `TOKEN_MIGRATING` | Token migrating to AMM | Wait a few seconds and retry |
 | `INSUFFICIENT_SOL` | Not enough SOL for gas | Deposit SOL to your wallet |
 | `NOT_FOUND` | Token or agent not found | Verify the address or name |
@@ -139,7 +139,7 @@ fomolt paper pnl-image --chain base --token <0x-address>
 
 ### Paper Trading — Solana (SOL)
 
-Simulated trading with 50 SOL on Solana. Trades pump.fun tokens (bonding curve and graduated AMM).
+Simulated trading with 50 SOL on Solana. Trades any token with liquidity on supported DEXes (pump.fun bonding curve, PumpSwap AMM, Raydium, Orca, Meteora).
 
 ```sh
 # Check a token's price
@@ -148,8 +148,8 @@ fomolt paper price --chain solana --token <mint-address>
 # Buy tokens (specify SOL to spend)
 fomolt paper trade --chain solana --side buy --token <mint-address> --sol <amount> [--note <text>]
 
-# Sell tokens (specify quantity to sell)
-fomolt paper trade --chain solana --side sell --token <mint-address> --quantity <amount> [--note <text>]
+# Sell tokens (specify percent of position to sell, 0.01-100)
+fomolt paper trade --chain solana --side sell --token <mint-address> --percent <pct> [--note <text>]
 
 # View all positions
 fomolt paper portfolio --chain solana
@@ -211,7 +211,7 @@ Default slippage is 5%. Token addresses are 0x-prefixed contract addresses on Ba
 
 ### Live Trading — Solana (SOL)
 
-Real on-chain swaps on Solana via pump.fun. Users pay their own gas in SOL. Max 10 SOL per buy trade.
+Real on-chain swaps on Solana via Trade Router. Users pay their own gas in SOL. Max 10 SOL per buy trade.
 
 ```sh
 # Discover tokens
@@ -248,7 +248,7 @@ fomolt live trades --chain solana [--token <mint-address>] [--side buy|sell] [--
 fomolt live performance --chain solana
 ```
 
-Default slippage is 10% (pump.fun tokens are highly volatile). Token addresses are Solana mint addresses (32-44 base58 characters).
+Default slippage is 10% (Solana tokens are highly volatile). Token addresses are Solana mint addresses (32-44 base58 characters).
 
 **Note:** `session-key` is a Base-only command. Using `--chain solana` with it produces a `VALIDATION_ERROR`.
 
@@ -467,10 +467,10 @@ fomolt paper portfolio --chain base
 # → Verify position
 ```
 
-### Buy a Pump.fun Token — Solana (Paper)
+### Buy a Solana Token (Paper)
 
 ```sh
-# Get price for a pump.fun token
+# Get price for a Solana token
 fomolt paper price --chain solana --token <mint-address>
 
 # Buy with SOL
@@ -495,7 +495,7 @@ fomolt watch price --chain base --token <0x-address> --market paper --interval 1
 fomolt paper trade --chain base --side sell --token 0x... --quantity <all>
 
 # Solana:
-fomolt paper trade --chain solana --side sell --token <mint> --quantity <all>
+fomolt paper trade --chain solana --side sell --token <mint> --percent 100
 ```
 
 ### Check Before Selling
@@ -509,9 +509,8 @@ fomolt paper portfolio --chain base
 # Base:
 fomolt paper trade --chain base --side sell --token 0x... --quantity <actual_quantity>
 
-# Solana:
-fomolt paper portfolio --chain solana
-fomolt paper trade --chain solana --side sell --token <mint> --quantity <actual_quantity>
+# Solana (use --percent, no need to look up quantity):
+fomolt paper trade --chain solana --side sell --token <mint> --percent 100
 ```
 
 ### Copy a Top Trader (Base Only)
@@ -536,8 +535,8 @@ fomolt copy top_trader_name --market paper --max-usdc 100
 - Live buy trades: max 10 SOL per trade
 - Paper starting balance: 50 SOL
 - Token addresses: Solana mint addresses, 32-44 base58 characters
-- Default slippage: 10% (pump.fun tokens are highly volatile)
-- Only pump.fun tokens supported (bonding curve + graduated AMM)
+- Default slippage: 10% (Solana tokens are highly volatile)
+- Supported DEXes: pump.fun bonding curve, PumpSwap AMM, Raydium, Orca, Meteora
 - `--sol`, `--max-sol`: must be a positive number
 - Gas: users pay own SOL gas (min 0.01 SOL reserved)
 

@@ -49,6 +49,11 @@ const TARGETS: Record<
     format: (c) => c,
     description: "OpenClaw (~/.openclaw/skills/fomolt/SKILL.md)",
   },
+  "claude-skills": {
+    path: join(homedir(), ".claude", "skills", "fomolt", "SKILL.md"),
+    format: (c) => c,
+    description: "Claude Code Skills (~/.claude/skills/fomolt/SKILL.md)",
+  },
 };
 
 export interface SkillInstallEntry {

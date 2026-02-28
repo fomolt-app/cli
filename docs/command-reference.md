@@ -28,7 +28,7 @@ All commands print JSON. Success goes to stdout, errors to stderr.
 
 Rate limit errors include `retryAfter` (seconds). All errors may include `requestId`.
 
-**Validation:** Numeric flags (`--usdc`, `--sol`, `--quantity`, `--amount`, `--interval`, `--limit`, `--slippage`, `--max-usdc`, `--max-sol`) and address flags (`--token`, `--to`, `--address`) are validated client-side before making any API call. Token addresses are either 0x-prefixed hex (Base) or 32-44 character base58 strings (Solana mint addresses). Invalid values exit immediately with `VALIDATION_ERROR`.
+**Validation:** Numeric flags (`--usdc`, `--sol`, `--quantity`, `--percent`, `--amount`, `--interval`, `--limit`, `--slippage`, `--max-usdc`, `--max-sol`) and address flags (`--token`, `--to`, `--address`) are validated client-side before making any API call. Token addresses are either 0x-prefixed hex (Base) or 32-44 character base58 strings (Solana mint addresses). Invalid values exit immediately with `VALIDATION_ERROR`.
 
 **Exception:** Running bare `fomolt` with no subcommand prints a plain-text status dashboard (not JSON).
 
@@ -184,7 +184,7 @@ fomolt paper trade --side sell --token <address> --quantity <qty> [--note <text>
 
 # Solana
 fomolt paper trade --side buy --token <mintAddress> --sol <amount> [--note <text>]
-fomolt paper trade --side sell --token <mintAddress> --quantity <qty> [--note <text>]
+fomolt paper trade --side sell --token <mintAddress> --percent <pct> [--note <text>]
 ```
 
 | Flag | Required | Description |
@@ -193,7 +193,8 @@ fomolt paper trade --side sell --token <mintAddress> --quantity <qty> [--note <t
 | `--token <address>` | yes | Token contract address (Base) or mint address (Solana) |
 | `--usdc <amount>` | buy only (Base) | USDC amount to spend |
 | `--sol <amount>` | buy only (Solana) | SOL amount to spend |
-| `--quantity <amount>` | sell only | Token quantity to sell |
+| `--quantity <amount>` | Base sell only | Token quantity to sell |
+| `--percent <pct>` | Solana sell only | Percent of position to sell (0.01-100) |
 | `--note <text>` | no | Trade note (max 280 chars) |
 
 ### `paper portfolio`
@@ -323,7 +324,7 @@ fomolt live quote --side sell --token <mintAddress> --quantity <qty> [--slippage
 | `--usdc <amount>` | buy only (Base) | — | USDC amount (must be > 0) |
 | `--sol <amount>` | buy only (Solana) | — | SOL amount (must be > 0) |
 | `--quantity <amount>` | sell only | — | Token quantity (must be > 0) |
-| `--slippage <pct>` | no | `5` (Base), `10` (Solana) | Slippage tolerance % (0-50). Default is higher for Solana because pump.fun tokens are volatile |
+| `--slippage <pct>` | no | `5` (Base), `10` (Solana) | Slippage tolerance % (0-50). Default is higher for Solana because Solana tokens are volatile |
 
 ### `live trade`
 
@@ -346,7 +347,7 @@ fomolt live trade --side sell --token <mintAddress> --quantity <qty> [--slippage
 | `--usdc <amount>` | buy only (Base) | — | USDC to spend (max 500, must be > 0) |
 | `--sol <amount>` | buy only (Solana) | — | SOL to spend (max 10, must be > 0) |
 | `--quantity <amount>` | sell only | — | Token quantity to sell (must be > 0) |
-| `--slippage <pct>` | no | `5` (Base), `10` (Solana) | Slippage tolerance % (0-50). Default is higher for Solana because pump.fun tokens are volatile |
+| `--slippage <pct>` | no | `5` (Base), `10` (Solana) | Slippage tolerance % (0-50). Default is higher for Solana because Solana tokens are volatile |
 | `--note <text>` | no | — | Trade note (max 280 chars) |
 
 ### `live withdraw`
