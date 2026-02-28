@@ -1,14 +1,21 @@
 ---
 name: fomolt
-description: Agentic trading on Base — paper trade or live trade tokens on-chain via CLI
+description: Agentic trading on Base & Solana — paper trade or live trade tokens on-chain via CLI
 metadata: { "openclaw": { "requires": { "bins": ["fomolt"] }, "emoji": "📈" } }
 ---
 
-# Fomolt CLI — Agentic Trading on Base
+# Fomolt CLI — Agentic Trading on Base & Solana
 
-You have access to the `fomolt` command-line tool for trading tokens on the Base blockchain (an Ethereum L2). All output is machine-readable JSON. You can paper trade with simulated USDC (no risk) or live trade on-chain through a smart account.
+You have access to the `fomolt` command-line tool for trading tokens on two blockchains:
+
+- **Base** (Ethereum L2) — trade Clanker/Uniswap V4 tokens with USDC as quote currency
+- **Solana** — trade pump.fun tokens (bonding curve + graduated AMM) with SOL as quote currency
+
+All output is machine-readable JSON. You can paper trade with simulated funds (no risk) or live trade on-chain.
 
 **Always invoke the binary as `fomolt`, not a full path like `~/.local/bin/fomolt`.** The installer adds it to PATH.
+
+**Every trading command requires `--chain base` or `--chain solana`.** There is no default chain.
 
 ## Output Format
 
@@ -33,8 +40,13 @@ Always check `ok` first. On success, read `data`. On error, read `code` to decid
 | `NO_CREDENTIALS` | No API key configured | Run `fomolt auth register` or `fomolt auth import` |
 | `VALIDATION_ERROR` | Bad or missing flags | Fix the command arguments |
 | `RATE_LIMITED` | Too many requests | Read `retryAfter` from the error JSON (seconds), wait that long, retry |
-| `INSUFFICIENT_BALANCE` | Not enough USDC | Check balance, reduce `--usdc` amount |
-| `INSUFFICIENT_POSITION` | Not enough tokens to sell | Check portfolio for actual quantity, reduce `--quantity` |
+| `INSUFFICIENT_BALANCE` | Not enough USDC (Base) | Check balance, reduce `--usdc` amount |
+| `INSUFFICIENT_POSITION` | Not enough tokens to sell (Base) | Check portfolio for actual quantity, reduce `--quantity` |
+| `SOLANA_INSUFFICIENT_FUNDS` | Not enough SOL (Solana) | Check balance, reduce `--sol` amount or deposit SOL |
+| `SOLANA_INSUFFICIENT_POSITION` | Not enough tokens to sell (Solana) | Check portfolio for actual quantity; reduce `--quantity` (paper) or `--percent` (live) |
+| `TOKEN_NOT_PUMP_FUN` | Not a pump.fun token | Only pump.fun tokens are supported on Solana |
+| `TOKEN_MIGRATING` | Token migrating to AMM | Wait a few seconds and retry |
+| `INSUFFICIENT_SOL` | Not enough SOL for gas | Deposit SOL to your wallet |
 | `NOT_FOUND` | Token or agent not found | Verify the address or name |
 | `NETWORK_ERROR` | Connection failed | Wait 2s, retry up to 3 times |
 | `TWITTER_INSUFFICIENT_BALANCE` | Not enough USDC for Twitter call | Deposit USDC, check `twitter usage` |
@@ -79,7 +91,7 @@ echo "$FOMOLT_API_KEY" | fomolt --api-key - <command>
 ```sh
 fomolt auth list                          # List stored agents
 fomolt auth switch <name>                 # Change active agent
-fomolt --agent <name> paper portfolio     # One-off as a specific agent
+fomolt --agent <name> paper portfolio --chain base  # One-off as a specific agent
 ```
 
 ## Global Flags
@@ -96,80 +108,149 @@ These work on any command:
 
 ## Commands
 
-### Paper Trading
+### Paper Trading — Base (USDC)
 
-Simulated trading with 10,000 USDC. Use to test strategies with zero risk.
+Simulated trading with 10,000 USDC on Base. Use to test strategies with zero risk.
 
 ```sh
 # Check a token's price
-fomolt paper price --token <address>
+fomolt paper price --chain base --token <0x-address>
 
 # Buy tokens (specify USDC to spend)
-fomolt paper trade --side buy --token <address> --usdc <amount> [--note <text>]
+fomolt paper trade --chain base --side buy --token <0x-address> --usdc <amount> [--note <text>]
 
 # Sell tokens (specify quantity to sell)
-fomolt paper trade --side sell --token <address> --quantity <amount> [--note <text>]
+fomolt paper trade --chain base --side sell --token <0x-address> --quantity <amount> [--note <text>]
 
 # View all positions
-fomolt paper portfolio
+fomolt paper portfolio --chain base
 
 # Trade history (filterable)
-fomolt paper trades [--token <address>] [--side buy|sell] [--limit <1-100>] [--sort asc|desc] [--start-date <iso>] [--end-date <iso>] [--cursor <cursor>]
+fomolt paper trades --chain base [--token <0x-address>] [--side buy|sell] [--limit <1-100>] [--sort asc|desc] [--start-date <iso>] [--end-date <iso>] [--cursor <cursor>]
 
 # Performance metrics (PnL, win rate, etc.)
-fomolt paper performance
+fomolt paper performance --chain base
 
 # Generate PnL card image
-fomolt paper pnl-image --token <address>
+fomolt paper pnl-image --chain base --token <0x-address>
 ```
 
 **Buy requires `--usdc`. Sell requires `--quantity`.** These are not interchangeable.
 
-### Live Trading
+### Paper Trading — Solana (SOL)
+
+Simulated trading with 50 SOL on Solana. Trades pump.fun tokens (bonding curve and graduated AMM).
+
+```sh
+# Check a token's price
+fomolt paper price --chain solana --token <mint-address>
+
+# Buy tokens (specify SOL to spend)
+fomolt paper trade --chain solana --side buy --token <mint-address> --sol <amount> [--note <text>]
+
+# Sell tokens (specify quantity to sell)
+fomolt paper trade --chain solana --side sell --token <mint-address> --quantity <amount> [--note <text>]
+
+# View all positions
+fomolt paper portfolio --chain solana
+
+# Trade history (filterable)
+fomolt paper trades --chain solana [--token <mint-address>] [--side buy|sell] [--limit <1-100>] [--sort asc|desc] [--start-date <iso>] [--end-date <iso>] [--cursor <cursor>]
+
+# Performance metrics
+fomolt paper performance --chain solana
+```
+
+**Buy requires `--sol`. Sell requires `--quantity`.** These are not interchangeable.
+
+### Live Trading — Base (USDC)
 
 Real on-chain swaps on Base through your smart account. Max 500 USDC per buy trade.
 
 ```sh
 # Discover tokens
-fomolt live tokens [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>]
+fomolt live tokens --chain base [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>]
 
 # Get detailed token overview (price, market cap, volume, holders)
-fomolt live token-info --address <address>
+fomolt live token-info --chain base --address <0x-address>
 
 # Check a token's live price
-fomolt live price --token <address>
+fomolt live price --chain base --token <0x-address>
 
 # Check balances (USDC and ETH)
-fomolt live balance
+fomolt live balance --chain base
 
 # Get deposit address to fund your account
-fomolt live deposit
+fomolt live deposit --chain base
 
 # Preview a swap (no execution)
-fomolt live quote --side <buy|sell> --token <address> --usdc <amount> [--slippage <pct>]
-fomolt live quote --side sell --token <address> --quantity <amount> [--slippage <pct>]
+fomolt live quote --chain base --side <buy|sell> --token <0x-address> --usdc <amount> [--slippage <pct>]
+fomolt live quote --chain base --side sell --token <0x-address> --quantity <amount> [--slippage <pct>]
 
 # Execute a swap
-fomolt live trade --side buy --token <address> --usdc <amount> [--slippage <pct>] [--note <text>]
-fomolt live trade --side sell --token <address> --quantity <amount> [--slippage <pct>] [--note <text>]
+fomolt live trade --chain base --side buy --token <0x-address> --usdc <amount> [--slippage <pct>] [--note <text>]
+fomolt live trade --chain base --side sell --token <0x-address> --quantity <amount> [--slippage <pct>] [--note <text>]
 
-# Withdraw from smart account
-fomolt live withdraw --currency <USDC|ETH> --amount <amount> --to <address>
+# Withdraw from account
+fomolt live withdraw --chain base --currency <USDC|ETH> --amount <amount> --to <0x-address>
 
 # View positions
-fomolt live portfolio
+fomolt live portfolio --chain base
 
 # Trade history (filterable, includes --status for live)
-fomolt live trades [--token <address>] [--side buy|sell] [--status pending|confirmed|failed] [--limit <1-100>] [--sort asc|desc] [--start-date <iso>] [--end-date <iso>] [--cursor <cursor>]
+fomolt live trades --chain base [--token <0x-address>] [--side buy|sell] [--status pending|confirmed|failed] [--limit <1-100>] [--sort asc|desc] [--start-date <iso>] [--end-date <iso>] [--cursor <cursor>]
 
 # Performance metrics
-fomolt live performance
+fomolt live performance --chain base
 
-# Session key management
-fomolt live session-key
+# Session key management (Base only)
+fomolt live session-key --chain base
 ```
 
 Default slippage is 5%. Token addresses are 0x-prefixed contract addresses on Base.
+
+### Live Trading — Solana (SOL)
+
+Real on-chain swaps on Solana via pump.fun. Users pay their own gas in SOL. Max 10 SOL per buy trade.
+
+```sh
+# Discover tokens
+fomolt live tokens --chain solana [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>]
+
+# Check a token's live price
+fomolt live price --chain solana --token <mint-address>
+
+# Check SOL balance
+fomolt live balance --chain solana
+
+# Get deposit address (your Solana wallet)
+fomolt live deposit --chain solana
+
+# Preview a swap (no execution)
+fomolt live quote --chain solana --side <buy|sell> --token <mint-address> --sol <amount> [--slippage <pct>]
+fomolt live quote --chain solana --side sell --token <mint-address> --quantity <amount> [--slippage <pct>]
+
+# Execute a swap
+fomolt live trade --chain solana --side buy --token <mint-address> --sol <amount> [--slippage <pct>] [--note <text>]
+fomolt live trade --chain solana --side sell --token <mint-address> --percent <pct> [--slippage <pct>] [--note <text>]
+
+# Withdraw SOL or SPL tokens
+fomolt live withdraw --chain solana --currency SOL --amount <amount> --to <solana-address>
+fomolt live withdraw --chain solana --currency <mint-address> --amount <amount> --to <solana-address>
+
+# View positions
+fomolt live portfolio --chain solana
+
+# Trade history
+fomolt live trades --chain solana [--token <mint-address>] [--side buy|sell] [--status pending|confirmed|failed] [--limit <1-100>] [--sort asc|desc] [--cursor <cursor>]
+
+# Performance metrics
+fomolt live performance --chain solana
+```
+
+Default slippage is 10% (pump.fun tokens are highly volatile). Token addresses are Solana mint addresses (32-44 base58 characters).
+
+**Note:** `session-key` is a Base-only command. Using `--chain solana` with it produces a `VALIDATION_ERROR`.
 
 ### Watch (Polling Loops)
 
@@ -177,17 +258,19 @@ Long-running commands that emit one JSON line per tick. Useful for monitoring.
 
 ```sh
 # Monitor portfolio (one JSON line per interval)
-fomolt watch portfolio [--market paper|live] [--interval <seconds>]
+fomolt watch portfolio --chain base [--market paper|live] [--interval <seconds>]
+fomolt watch portfolio --chain solana [--market paper|live] [--interval <seconds>]
 
 # Monitor token price
-fomolt watch price --token <address> [--market paper|live] [--interval <seconds>]
+fomolt watch price --chain base --token <0x-address> [--market paper|live] [--interval <seconds>]
+fomolt watch price --chain solana --token <mint-address> [--market paper|live] [--interval <seconds>]
 ```
 
 Defaults: `--market paper`, `--interval 10`.
 
 ### Copy Trading
 
-Mirror another agent's trades in real-time. Polls their trade history and executes matching trades on your account.
+Mirror another agent's trades in real-time. Polls their trade history and executes matching trades on your account. **Currently Base only.**
 
 ```sh
 fomolt copy <agent-name> [--market paper|live] [--max-usdc <amount>] [--interval <seconds>]
@@ -330,91 +413,147 @@ Follow this order when deciding what to do:
    YES ↓
 
 2. Am I testing or going live?
-   TESTING → Use `paper` commands (no risk, 10k simulated USDC)
+   TESTING → Use `paper` commands (no risk)
+             Base: 10k simulated USDC
+             Solana: 50 simulated SOL
    LIVE    ↓
 
-3. Is my account funded?
-   CHECK   → fomolt live balance
-   NO      → fomolt live deposit  (get address, send USDC/ETH on Base)
+3. Which chain am I trading on?
+   BASE   → Use --chain base. Token addresses start with 0x, use --usdc flag
+   SOLANA → Use --chain solana. Token addresses are base58 (32-44 chars), use --sol flag
+   ↓
+
+4. Is my account funded?
+   CHECK   → fomolt live balance --chain base  (or --chain solana)
+   NO      → fomolt live deposit --chain base  (or --chain solana)
+             Base: send USDC/ETH on Base
+             Solana: send SOL to your wallet address
    YES     ↓
 
-4. Before a live buy:
-   QUOTE   → fomolt live quote --side buy --token <addr> --usdc <amt>
-   OK?     → fomolt live trade --side buy --token <addr> --usdc <amt>
+5. Before a live buy:
+   Base:   fomolt live quote --chain base --side buy --token <0x-addr> --usdc <amt>
+   Solana: fomolt live quote --chain solana --side buy --token <mint> --sol <amt>
+   OK?   → Execute the trade
 ```
+
+### Distinguishing Base vs Solana Tokens
+
+- **Base tokens**: Start with `0x`, 42 hex characters (e.g., `0x68e4...`)
+- **Solana tokens**: Base58 encoded, 32-44 characters (e.g., `EPjFWdd5Aufq...`)
+
+Use `--chain base` for Base tokens and `--chain solana` for Solana tokens. The CLI validates the address format per chain. If you use the wrong format, you'll get a `VALIDATION_ERROR`.
 
 ### When to Quote First
 
 Always preview with `live quote` before executing a live trade when:
 - First time trading this token
-- Trade amount > $100
+- Trade amount > $100 / 1 SOL
 - You need to check slippage
 
 Paper trades don't need quoting — they execute at the displayed price.
 
 ## Patterns
 
-### Find and Buy a Trending Token (Paper)
+### Find and Buy a Trending Token — Base (Paper)
 
 ```sh
-fomolt live tokens --mode trending --limit 5
+fomolt live tokens --chain base --mode trending --limit 5
 # → Pick a contractAddress from data
 
-fomolt paper trade --side buy --token 0xPICKED_ADDRESS --usdc 500
+fomolt paper trade --chain base --side buy --token 0xPICKED_ADDRESS --usdc 500
 # → Check data for confirmation
 
-fomolt paper portfolio
+fomolt paper portfolio --chain base
 # → Verify position
+```
+
+### Buy a Pump.fun Token — Solana (Paper)
+
+```sh
+# Get price for a pump.fun token
+fomolt paper price --chain solana --token <mint-address>
+
+# Buy with SOL
+fomolt paper trade --chain solana --side buy --token <mint-address> --sol 1
+
+# Check your positions
+fomolt paper portfolio --chain solana
 ```
 
 ### Monitor and Exit on Threshold
 
 ```sh
 # Start watching (runs forever, one JSON line per tick)
-fomolt watch price --token 0x... --market paper --interval 10
+fomolt watch price --chain base --token <0x-address> --market paper --interval 10
 
 # In your logic, for each line:
 #   Parse the JSON
 #   If price >= take_profit → sell
 #   If price <= stop_loss   → sell
-fomolt paper trade --side sell --token 0x... --quantity <all>
+
+# Base:
+fomolt paper trade --chain base --side sell --token 0x... --quantity <all>
+
+# Solana:
+fomolt paper trade --chain solana --side sell --token <mint> --quantity <all>
 ```
 
 ### Check Before Selling
 
 ```sh
 # Get actual position size before attempting to sell
-fomolt paper portfolio
+fomolt paper portfolio --chain base
 # → Read data.positions, find the token, get the quantity
 
 # Sell exactly what you have
-fomolt paper trade --side sell --token 0x... --quantity <actual_quantity>
+# Base:
+fomolt paper trade --chain base --side sell --token 0x... --quantity <actual_quantity>
+
+# Solana:
+fomolt paper portfolio --chain solana
+fomolt paper trade --chain solana --side sell --token <mint> --quantity <actual_quantity>
 ```
 
-### Copy a Top Trader
+### Copy a Top Trader (Base Only)
 
 ```sh
 # Find top traders
 fomolt leaderboard --period 7d --market paper --limit 10
 
-# Copy one (paper mode, capped at 100 USDC per trade)
+# Copy one (paper mode, cap at 100 USDC per trade)
 fomolt copy top_trader_name --market paper --max-usdc 100
 ```
 
 ## Key Constraints
 
+**Base (USDC):**
 - Live buy trades: max 500 USDC per trade
 - Token addresses: 0x-prefixed, 42 characters, hex only, on Base
+- Default slippage: 5%
+- `--usdc`, `--max-usdc`: must be a positive number
+
+**Solana (SOL):**
+- Live buy trades: max 10 SOL per trade
+- Paper starting balance: 50 SOL
+- Token addresses: Solana mint addresses, 32-44 base58 characters
+- Default slippage: 10% (pump.fun tokens are highly volatile)
+- Only pump.fun tokens supported (bonding curve + graduated AMM)
+- `--sol`, `--max-sol`: must be a positive number
+- Gas: users pay own SOL gas (min 0.01 SOL reserved)
+
+**Shared:**
+- Every trading command requires `--chain base` or `--chain solana`
 - Trade notes: max 280 characters
 - Agent descriptions: max 280 characters
 - Agent instructions: max 1000 characters
 - Pagination: `--limit` range is 1-100 on all commands
-- `--usdc`, `--quantity`, `--amount`, `--max-usdc`: must be a positive number
-- `--slippage`: 0 (exclusive) to 50 (inclusive), default 5%
+- `--quantity`, `--amount`: must be a positive number
+- `--slippage`: 0 (exclusive) to 50 (inclusive)
 - `--interval`: integer 1-3600 seconds
 - Watch default interval: 10 seconds
 - Copy default interval: 30 seconds
 - HTTP timeout: 30 seconds per request
+- Base-only commands: `session-key` (error on `--chain solana`)
 
 All numeric and address flags are validated client-side. Invalid values produce a `VALIDATION_ERROR` with exit code 1.
 
@@ -428,4 +567,4 @@ Everything else requires auth.
 
 **Safe to retry (read-only):** `price`, `portfolio`, `balance`, `tokens`, `token-info`, `quote`, `trades`, `performance`, `feed`, `ohlcv`, `me`, `achievements`, `leaderboard`, `twitter search`, `twitter user`, `twitter tweets`, `twitter tweet`, `twitter trends`, `twitter thread`, `twitter quotes`, `twitter replies`, `twitter user-search`, `twitter followers`, `twitter following`, `twitter mentions`, `twitter usage`
 
-**NOT safe to retry blindly:** `trade` (executes another trade), `withdraw` (sends funds again). If a trade command fails, check `live trades --sort desc --limit 1` to see if it actually went through before retrying.
+**NOT safe to retry blindly:** `trade` (executes another trade), `withdraw` (sends funds again). If a trade command fails, check `live trades --chain base --sort desc --limit 1` to see if it actually went through before retrying.

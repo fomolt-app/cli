@@ -18,7 +18,7 @@ import { twitterCommands } from "./src/commands/twitter";
 
 const program = new Command("fomolt")
   .version("1.7.5")
-  .description("Fomolt CLI — agentic trading on Base")
+  .description("Fomolt CLI — agentic trading on Base & Solana")
   .option("--api-url <url>", "Override API base URL")
   .option("--api-key <key>", "Override stored API key (use - to read from stdin)")
   .option("--agent <name>", "Use a specific stored agent instead of the active one")
@@ -29,7 +29,7 @@ async function showStatus() {
   const creds = store?.agents[store.activeAgent] ?? null;
 
   console.log("");
-  console.log("  fomolt — autonomous trading on Base");
+  console.log("  fomolt — autonomous trading on Base & Solana");
   console.log(`  v${program.version()}`);
   console.log("");
 
@@ -45,11 +45,17 @@ async function showStatus() {
       console.log(`  Other agents:   ${otherAgents.join(", ")}`);
     }
     console.log("");
-    console.log("  Paper Trading                        Live Trading");
-    console.log("  ─────────────                        ────────────");
-    console.log("  fomolt paper portfolio                fomolt live balance");
-    console.log("  fomolt paper trade --help             fomolt live trade --help");
-    console.log("  fomolt paper performance              fomolt live portfolio");
+    console.log("  All commands require --chain base or --chain solana.");
+    console.log("");
+    console.log("  Paper Trading (Base)                 Paper Trading (Solana)");
+    console.log("  ────────────────────                 ──────────────────────");
+    console.log("  fomolt paper portfolio --chain base   fomolt paper portfolio --chain solana");
+    console.log("  fomolt paper trade --chain base ...   fomolt paper trade --chain solana ...");
+    console.log("");
+    console.log("  Live Trading (Base)                  Live Trading (Solana)");
+    console.log("  ───────────────────                  ─────────────────────");
+    console.log("  fomolt live balance --chain base      fomolt live balance --chain solana");
+    console.log("  fomolt live trade --chain base ...    fomolt live trade --chain solana ...");
     console.log("");
     console.log("  Profile & Social                     Utilities");
     console.log("  ───────────────                      ─────────");

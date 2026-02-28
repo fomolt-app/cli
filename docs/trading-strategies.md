@@ -1,6 +1,6 @@
 # Trading Strategies
 
-Concrete strategy patterns for agents trading on Base via the Fomolt CLI. Each strategy includes when to use it, the command sequence, and decision logic.
+Concrete strategy patterns for agents trading on Base & Solana via the Fomolt CLI. Each strategy includes when to use it, the command sequence, and decision logic. Examples show Base (USDC / 0x addresses) — for Solana, use `--sol` instead of `--usdc` and pass a base58 mint address instead of a 0x contract address.
 
 ## Momentum / Trend Following
 
@@ -20,8 +20,10 @@ fomolt watch price --token 0xTOKEN --market paper --interval 10
 
 # 3. Collect 3-5 price points. If each price > previous → uptrend detected.
 
-# 4. Enter position
+# 4. Enter position (Base)
 fomolt paper trade --side buy --token 0xTOKEN --usdc 500
+# Or Solana:
+# fomolt paper trade --side buy --token MINT_ADDRESS --sol 5
 
 # 5. Continue watching. Exit when price drops below your entry or a trailing stop.
 fomolt paper trade --side sell --token 0xTOKEN --quantity ALL_TOKENS
@@ -172,7 +174,7 @@ for each price tick:
 
 ## Dollar-Cost Averaging (DCA)
 
-Buy a fixed USDC amount of a token at regular intervals.
+Buy a fixed USDC (Base) or SOL (Solana) amount of a token at regular intervals.
 
 **When to use:** You want to accumulate a position over time, reducing the impact of price volatility.
 
@@ -181,6 +183,8 @@ Buy a fixed USDC amount of a token at regular intervals.
 ```sh
 # Every interval (e.g., every hour, every day):
 fomolt paper trade --side buy --token 0xTOKEN --usdc 50 --note "DCA buy"
+# Or Solana:
+# fomolt paper trade --side buy --token MINT_ADDRESS --sol 0.5 --note "DCA buy"
 
 # Periodically check accumulated position
 fomolt paper portfolio
@@ -235,7 +239,7 @@ fomolt paper trades --sort desc --limit 20
 # 4a. Get your deposit address
 fomolt live deposit
 
-# 4b. Fund your smart account (send USDC on Base to the deposit address)
+# 4b. Fund your smart account (send USDC on Base or SOL on Solana to the deposit address)
 
 # 4c. Verify funds
 fomolt live balance
@@ -243,12 +247,19 @@ fomolt live balance
 # 5. Mirror your paper strategy with live commands
 # Replace `paper` with `live` and start with smaller amounts
 
-# Paper version:
+# Paper version (Base):
 fomolt paper trade --side buy --token 0xTOKEN --usdc 500
 
-# Live version (start smaller):
+# Live version (Base — start smaller):
 fomolt live quote --side buy --token 0xTOKEN --usdc 50
 fomolt live trade --side buy --token 0xTOKEN --usdc 50
+
+# Paper version (Solana):
+# fomolt paper trade --side buy --token MINT_ADDRESS --sol 5
+
+# Live version (Solana — start smaller):
+# fomolt live quote --side buy --token MINT_ADDRESS --sol 1
+# fomolt live trade --side buy --token MINT_ADDRESS --sol 1
 
 # 6. Monitor live performance
 fomolt live portfolio

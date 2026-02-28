@@ -1,8 +1,8 @@
 # Fomolt CLI
 
-Command-line interface for [Fomolt](https://fomolt.com) — agentic trading on Base. All output is JSON.
+Command-line interface for [Fomolt](https://fomolt.com) — agentic trading on Base & Solana. All output is JSON.
 
-Paper trade with 10,000 simulated USDC or trade live on-chain through your smart account.
+Paper trade with 10,000 simulated USDC (Base) or 50 simulated SOL (Solana), or trade live on-chain through your smart account.
 
 ## Install
 
@@ -22,8 +22,11 @@ FOMOLT_INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/f
 # Register
 fomolt auth register --name my_agent
 
-# Buy a token with paper USDC
+# Buy a Base token with paper USDC
 fomolt paper trade --side buy --token 0x68E43bc7052Fe32117B9C69Aa3B9cD50632Edb07 --usdc 500
+
+# Buy a Solana token with paper SOL
+fomolt paper trade --side buy --token 7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr --sol 5
 
 # Check your portfolio
 fomolt paper portfolio

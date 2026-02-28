@@ -5,6 +5,9 @@ import {
   validateLimit,
   validateTokenAddress,
   validateSlippage,
+  validateChain,
+  validateSolanaAddress,
+  validateAddress,
 } from "../src/validate";
 
 let stderr: string[] = [];
@@ -234,5 +237,115 @@ describe("validateSlippage", () => {
 
   test("small positive value", () => {
     expect(validateSlippage("0.001")).toBe("0.001");
+  });
+});
+
+// --- validateChain ---
+describe("validateChain", () => {
+  test("base is valid", () => {
+    expect(validateChain("base")).toBe("base");
+  });
+
+  test("solana is valid", () => {
+    expect(validateChain("solana")).toBe("solana");
+  });
+
+  test("ethereum is invalid", () => {
+    expectValidationError(() => validateChain("ethereum"));
+  });
+
+  test("empty string is invalid", () => {
+    expectValidationError(() => validateChain(""));
+  });
+
+  test("uppercase BASE is invalid", () => {
+    expectValidationError(() => validateChain("BASE"));
+  });
+});
+
+// --- validateSolanaAddress ---
+describe("validateSolanaAddress", () => {
+  test("valid 44-char address", () => {
+    const addr = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    expect(validateSolanaAddress(addr)).toBe(addr);
+  });
+
+  test("valid 32-char address", () => {
+    const addr = "11111111111111111111111111111111";
+    expect(validateSolanaAddress(addr)).toBe(addr);
+  });
+
+  test("too short (31 chars)", () => {
+    expectValidationError(() =>
+      validateSolanaAddress("1111111111111111111111111111111")
+    );
+  });
+
+  test("too long (45 chars)", () => {
+    expectValidationError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1vX")
+    );
+  });
+
+  test("contains 0 (invalid base58)", () => {
+    expectValidationError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G40EGGkZwyTDt1v")
+    );
+  });
+
+  test("contains O (invalid base58)", () => {
+    expectValidationError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4OEGGkZwyTDt1v")
+    );
+  });
+
+  test("contains I (invalid base58)", () => {
+    expectValidationError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4IEGGkZwyTDt1v")
+    );
+  });
+
+  test("contains l (invalid base58)", () => {
+    expectValidationError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4lEGGkZwyTDt1v")
+    );
+  });
+
+  test("0x address rejected", () => {
+    expectValidationError(() =>
+      validateSolanaAddress("0x4200000000000000000000000000000000000006")
+    );
+  });
+
+  test("custom flag name in error", () => {
+    const out = expectValidationError(() =>
+      validateSolanaAddress("bad", "--mint")
+    );
+    expect(out.error).toContain("--mint");
+  });
+});
+
+// --- validateAddress ---
+describe("validateAddress", () => {
+  test("validates 0x address for base chain", () => {
+    const addr = "0x4200000000000000000000000000000000000006";
+    expect(validateAddress(addr, "base")).toBe(addr);
+  });
+
+  test("validates Solana address for solana chain", () => {
+    const addr = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    expect(validateAddress(addr, "solana")).toBe(addr);
+  });
+
+  test("rejects Solana address for base chain", () => {
+    expectValidationError(() =>
+      validateAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "base")
+    );
+  });
+
+  test("rejects 0x address for solana chain", () => {
+    expectValidationError(() =>
+      validateAddress("0x4200000000000000000000000000000000000006", "solana")
+    );
   });
 });

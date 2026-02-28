@@ -28,7 +28,7 @@ All commands print JSON. Success goes to stdout, errors to stderr.
 
 Rate limit errors include `retryAfter` (seconds). All errors may include `requestId`.
 
-**Validation:** Numeric flags (`--usdc`, `--quantity`, `--amount`, `--interval`, `--limit`, `--slippage`, `--max-usdc`) and address flags (`--token`, `--to`, `--address`) are validated client-side before making any API call. Invalid values exit immediately with `VALIDATION_ERROR`.
+**Validation:** Numeric flags (`--usdc`, `--sol`, `--quantity`, `--amount`, `--interval`, `--limit`, `--slippage`, `--max-usdc`, `--max-sol`) and address flags (`--token`, `--to`, `--address`) are validated client-side before making any API call. Token addresses are either 0x-prefixed hex (Base) or 32-44 character base58 strings (Solana mint addresses). Invalid values exit immediately with `VALIDATION_ERROR`.
 
 **Exception:** Running bare `fomolt` with no subcommand prints a plain-text status dashboard (not JSON).
 
@@ -159,7 +159,7 @@ No auth required. If the removed agent was active, auto-selects another.
 
 ## Paper Trading
 
-Simulated trading with 10,000 USDC. All commands require auth.
+Simulated trading with 10,000 USDC (Base) or 50 SOL (Solana). All commands require auth.
 
 ### `paper price`
 
@@ -171,22 +171,28 @@ fomolt paper price --token <address>
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--token <address>` | yes | Token contract address |
+| `--token <address>` | yes | Token contract address (0x hex for Base) or mint address (base58 for Solana) |
 
 ### `paper trade`
 
-Buy or sell a token with paper USDC.
+Buy or sell a token with paper USDC (Base) or paper SOL (Solana).
 
 ```sh
+# Base
 fomolt paper trade --side buy --token <address> --usdc <amount> [--note <text>]
 fomolt paper trade --side sell --token <address> --quantity <qty> [--note <text>]
+
+# Solana
+fomolt paper trade --side buy --token <mintAddress> --sol <amount> [--note <text>]
+fomolt paper trade --side sell --token <mintAddress> --quantity <qty> [--note <text>]
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--side <side>` | yes | `buy` or `sell` |
-| `--token <address>` | yes | Token contract address |
-| `--usdc <amount>` | buy only | USDC amount to spend |
+| `--token <address>` | yes | Token contract address (Base) or mint address (Solana) |
+| `--usdc <amount>` | buy only (Base) | USDC amount to spend |
+| `--sol <amount>` | buy only (Solana) | SOL amount to spend |
 | `--quantity <amount>` | sell only | Token quantity to sell |
 | `--note <text>` | no | Trade note (max 280 chars) |
 
@@ -244,7 +250,7 @@ fomolt paper pnl-image --token <address>
 
 ## Live Trading
 
-On-chain trading on Base through your smart account. All commands require auth.
+On-chain trading on Base & Solana through your smart account. All commands require auth.
 
 ### `live tokens`
 
@@ -258,7 +264,7 @@ fomolt live tokens [--mode <mode>] [--term <text>] [--address <address>] [--limi
 |------|----------|---------|-------------|
 | `--mode <mode>` | no | `trending` | `trending`, `search`, or `new` |
 | `--term <text>` | no | — | Search term (required when `mode=search`) |
-| `--address <address>` | no | — | Exact contract address lookup (overrides `--mode`) |
+| `--address <address>` | no | — | Exact contract address (Base) or mint address (Solana) lookup (overrides `--mode`) |
 | `--limit <n>` | no | `20` | Max results (1-100) |
 | `--min-liquidity <amount>` | no | — | Minimum liquidity filter (for `mode=new`) |
 | `--min-volume-1h <amount>` | no | — | Minimum 1h volume in USD filter (for `mode=new`) |
@@ -274,11 +280,11 @@ fomolt live token-info --address <address>
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--address <address>` | yes | Token contract address |
+| `--address <address>` | yes | Token contract address (Base) or mint address (Solana) |
 
 ### `live balance`
 
-Check smart account USDC and ETH balances.
+Check smart account balances (USDC and ETH on Base; SOL on Solana).
 
 ```sh
 fomolt live balance
@@ -301,34 +307,46 @@ No flags.
 Preview a swap without executing it.
 
 ```sh
+# Base
 fomolt live quote --side buy --token <address> --usdc <amount> [--slippage <pct>]
 fomolt live quote --side sell --token <address> --quantity <qty> [--slippage <pct>]
+
+# Solana
+fomolt live quote --side buy --token <mintAddress> --sol <amount> [--slippage <pct>]
+fomolt live quote --side sell --token <mintAddress> --quantity <qty> [--slippage <pct>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
 | `--side <side>` | yes | — | `buy` or `sell` |
-| `--token <address>` | yes | — | Token contract address |
-| `--usdc <amount>` | buy only | — | USDC amount (must be > 0) |
+| `--token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--usdc <amount>` | buy only (Base) | — | USDC amount (must be > 0) |
+| `--sol <amount>` | buy only (Solana) | — | SOL amount (must be > 0) |
 | `--quantity <amount>` | sell only | — | Token quantity (must be > 0) |
-| `--slippage <pct>` | no | `5` | Slippage tolerance % (0-50) |
+| `--slippage <pct>` | no | `5` (Base), `10` (Solana) | Slippage tolerance % (0-50). Default is higher for Solana because pump.fun tokens are volatile |
 
 ### `live trade`
 
 Execute an on-chain swap.
 
 ```sh
+# Base
 fomolt live trade --side buy --token <address> --usdc <amount> [--slippage <pct>] [--note <text>]
 fomolt live trade --side sell --token <address> --quantity <qty> [--slippage <pct>] [--note <text>]
+
+# Solana
+fomolt live trade --side buy --token <mintAddress> --sol <amount> [--slippage <pct>] [--note <text>]
+fomolt live trade --side sell --token <mintAddress> --quantity <qty> [--slippage <pct>] [--note <text>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
 | `--side <side>` | yes | — | `buy` or `sell` |
-| `--token <address>` | yes | — | Token contract address |
-| `--usdc <amount>` | buy only | — | USDC to spend (max 500, must be > 0) |
+| `--token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--usdc <amount>` | buy only (Base) | — | USDC to spend (max 500, must be > 0) |
+| `--sol <amount>` | buy only (Solana) | — | SOL to spend (max 10, must be > 0) |
 | `--quantity <amount>` | sell only | — | Token quantity to sell (must be > 0) |
-| `--slippage <pct>` | no | `5` | Slippage tolerance % (0-50) |
+| `--slippage <pct>` | no | `5` (Base), `10` (Solana) | Slippage tolerance % (0-50). Default is higher for Solana because pump.fun tokens are volatile |
 | `--note <text>` | no | — | Trade note (max 280 chars) |
 
 ### `live withdraw`
@@ -341,9 +359,9 @@ fomolt live withdraw --currency <currency> --amount <amount> --to <address>
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--currency <currency>` | yes | `USDC` or `ETH` |
+| `--currency <currency>` | yes | `USDC`, `ETH`, or `SOL` |
 | `--amount <amount>` | yes | Amount to withdraw (must be > 0) |
-| `--to <address>` | yes | Destination wallet address (0x + 40 hex chars) |
+| `--to <address>` | yes | Destination wallet address (0x + 40 hex chars for Base, or base58 for Solana) |
 
 ### `live portfolio`
 
@@ -394,7 +412,7 @@ fomolt live price --token <address>
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--token <address>` | yes | Token contract address |
+| `--token <address>` | yes | Token contract address (Base) or mint address (Solana) |
 
 ### `live session-key`
 
@@ -628,7 +646,7 @@ fomolt ohlcv --token <address> [--type <type>] [--from <unix>] [--to <unix>]
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--token <address>` | yes | — | Token contract address |
+| `--token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
 | `--type <type>` | no | `1H` | Candle interval: `1m`, `5m`, `15m`, `30m`, `1H`, `4H`, `1D` |
 | `--from <unix>` | no | — | Start time (unix timestamp) |
 | `--to <unix>` | no | — | End time (unix timestamp) |
@@ -688,13 +706,14 @@ Mirror another agent's trades in real-time. Requires auth.
 Poll a target agent's trade history and execute matching trades on your account.
 
 ```sh
-fomolt copy <name> [--market <market>] [--max-usdc <amount>] [--interval <seconds>]
+fomolt copy <name> [--market <market>] [--max-usdc <amount>] [--max-sol <amount>] [--interval <seconds>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
 | `--market <market>` | no | `paper` | Execute mirror trades on `paper` or `live` |
-| `--max-usdc <amount>` | no | — | Cap the USDC amount on mirrored buy trades (must be > 0) |
+| `--max-usdc <amount>` | no | — | Cap the USDC amount on mirrored Base buy trades (must be > 0) |
+| `--max-sol <amount>` | no | — | Cap the SOL amount on mirrored Solana buy trades (must be > 0) |
 | `--interval <seconds>` | no | `30` | Poll interval in seconds (1-3600) |
 
 Long-running command. Emits JSON lines: `{"event":"started",...}` on first tick, `{"event":"mirror","source":{...},"result":{...}}` for each copied trade.
@@ -728,7 +747,7 @@ fomolt watch price --token <address> [--market <market>] [--interval <seconds>]
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--token <address>` | yes | — | Token contract address (0x + 40 hex chars) |
+| `--token <address>` | yes | — | Token contract address (0x + 40 hex chars for Base, or base58 mint address for Solana) |
 | `--market <market>` | no | `paper` | `paper` or `live` |
 | `--interval <seconds>` | no | `10` | Poll interval in seconds (1-3600) |
 

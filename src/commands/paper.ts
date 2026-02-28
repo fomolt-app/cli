@@ -1,61 +1,76 @@
 import { Command } from "commander";
-import { success } from "../output";
+import { success, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-import { validateTokenAddress, validatePositiveNumber, validateLimit } from "../validate";
+import { validateTokenAddress, validatePositiveNumber, validateLimit, validateChain, validateAddress, type Chain } from "../validate";
 
 export async function handlePaperPrice(
-  opts: { token: string },
+  opts: { token: string; chain: Chain },
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/paper/base/price", {
-    contractAddress: opts.token,
+  const prefix = opts.chain;
+  const addrField = opts.chain === "base" ? "contractAddress" : "mintAddress";
+  const data = await client.get(`/agent/paper/${prefix}/price`, {
+    [addrField]: opts.token,
   });
   success(data);
 }
 
 export async function handlePaperTrade(
-  opts: { side: string; token: string; usdc?: string; quantity?: string; note?: string },
+  opts: { side: string; token: string; chain: Chain; usdc?: string; sol?: string; quantity?: string; note?: string },
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
+  const prefix = opts.chain;
+  const addrField = opts.chain === "base" ? "contractAddress" : "mintAddress";
   const body: Record<string, unknown> = {
-    contractAddress: opts.token,
+    [addrField]: opts.token,
     side: opts.side,
   };
   if (opts.usdc) body.amountUsdc = opts.usdc;
+  if (opts.sol) body.amountSol = opts.sol;
   if (opts.quantity) body.quantity = opts.quantity;
   if (opts.note) body.note = opts.note;
-  const data = await client.post("/agent/paper/base/trade", body);
+  const data = await client.post(`/agent/paper/${prefix}/trade`, body);
   success(data);
 }
 
-export async function handlePaperPortfolio(ctx: CmdContext): Promise<void> {
+export async function handlePaperPortfolio(
+  opts: { chain: Chain },
+  ctx: CmdContext
+): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/paper/base/portfolio");
+  const prefix = opts.chain;
+  const data = await client.get(`/agent/paper/${prefix}/portfolio`);
   success(data);
 }
 
 export async function handlePaperTrades(
-  opts: { cursor?: string; limit?: string; contractAddress?: string; side?: string; startDate?: string; endDate?: string; sort?: string },
+  opts: { chain: Chain; cursor?: string; limit?: string; contractAddress?: string; mintAddress?: string; side?: string; startDate?: string; endDate?: string; sort?: string },
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
+  const prefix = opts.chain;
   const params: Record<string, string> = {};
   if (opts.cursor) params.cursor = opts.cursor;
   if (opts.limit) params.limit = opts.limit;
   if (opts.contractAddress) params.contractAddress = opts.contractAddress;
+  if (opts.mintAddress) params.mintAddress = opts.mintAddress;
   if (opts.side) params.side = opts.side;
   if (opts.startDate) params.startDate = opts.startDate;
   if (opts.endDate) params.endDate = opts.endDate;
   if (opts.sort) params.sort = opts.sort;
-  const data = await client.get("/agent/paper/base/trades", params);
+  const data = await client.get(`/agent/paper/${prefix}/trades`, params);
   success(data);
 }
 
-export async function handlePaperPerformance(ctx: CmdContext): Promise<void> {
+export async function handlePaperPerformance(
+  opts: { chain: Chain },
+  ctx: CmdContext
+): Promise<void> {
   const client = await getAuthClient(ctx);
-  const data = await client.get("/agent/paper/base/performance");
+  const prefix = opts.chain;
+  const data = await client.get(`/agent/paper/${prefix}/performance`);
   success(data);
 }
 
@@ -72,38 +87,59 @@ export async function handlePaperPnlImage(
 
 export function paperCommands(getContext: () => CmdContext): Command {
   const cmd = new Command("paper").description(
-    "Paper trading with simulated USDC"
+    "Paper trading with simulated funds"
   );
 
   cmd
     .command("price")
-    .description("Look up token price by contract address")
-    .requiredOption("--token <address>", "Token contract address")
-    .action(async (opts) => handlePaperPrice({ token: validateTokenAddress(opts.token) }, getContext()));
+    .description("Look up token price by address")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("--token <address>", "Token address")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      return handlePaperPrice({ token: validateAddress(opts.token, chain), chain }, getContext());
+    });
 
   cmd
     .command("trade")
-    .description("Buy or sell a token with paper USDC")
+    .description("Buy or sell a token")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
     .requiredOption("--side <side>", "buy or sell")
-    .requiredOption("--token <address>", "Token contract address")
-    .option("--usdc <amount>", "USDC to spend (buy orders)")
+    .requiredOption("--token <address>", "Token address")
+    .option("--usdc <amount>", "USDC to spend (Base buy orders)")
+    .option("--sol <amount>", "SOL to spend (Solana buy orders)")
     .option("--quantity <amount>", "Token quantity to sell (sell orders)")
     .option("--note <text>", "Trade note")
     .action(async (opts) => {
-      validateTokenAddress(opts.token);
+      const chain = validateChain(opts.chain);
+      validateAddress(opts.token, chain);
+      if (chain === "base" && opts.sol) {
+        error("Use --usdc for Base buys", "VALIDATION_ERROR");
+        process.exit(1);
+      }
+      if (chain === "solana" && opts.usdc) {
+        error("Use --sol for Solana buys", "VALIDATION_ERROR");
+        process.exit(1);
+      }
       if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
+      if (opts.sol) validatePositiveNumber(opts.sol, "--sol");
       if (opts.quantity) validatePositiveNumber(opts.quantity, "--quantity");
-      return handlePaperTrade(opts, getContext());
+      return handlePaperTrade({ ...opts, chain }, getContext());
     });
 
   cmd
     .command("portfolio")
     .description("View paper portfolio and positions")
-    .action(async () => handlePaperPortfolio(getContext()));
+    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      return handlePaperPortfolio({ chain }, getContext());
+    });
 
   cmd
     .command("trades")
     .description("View paper trade history")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
     .option("--cursor <cursor>", "Pagination cursor")
     .option("--limit <n>", "Max results (1-100)")
     .option("--token <address>", "Filter by token")
@@ -112,13 +148,16 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .option("--end-date <date>", "Filter to ISO datetime")
     .option("--sort <order>", "Sort order (asc/desc)")
     .action(async (opts) => {
+      const chain = validateChain(opts.chain);
       if (opts.limit) validateLimit(opts.limit);
-      if (opts.token) validateTokenAddress(opts.token);
+      if (opts.token) validateAddress(opts.token, chain);
+      const addrField = chain === "base" ? "contractAddress" : "mintAddress";
       return handlePaperTrades(
         {
+          chain,
           cursor: opts.cursor,
           limit: opts.limit,
-          contractAddress: opts.token,
+          [addrField]: opts.token,
           side: opts.side,
           startDate: opts.startDate,
           endDate: opts.endDate,
@@ -131,15 +170,25 @@ export function paperCommands(getContext: () => CmdContext): Command {
   cmd
     .command("performance")
     .description("View paper performance metrics")
-    .action(async () => handlePaperPerformance(getContext()));
+    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      return handlePaperPerformance({ chain }, getContext());
+    });
 
   cmd
     .command("pnl-image")
     .description("Generate PnL card image for a position")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
     .requiredOption("--token <address>", "Token contract address")
-    .action(async (opts) =>
-      handlePaperPnlImage({ token: validateTokenAddress(opts.token) }, getContext())
-    );
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      if (chain !== "base") {
+        error("pnl-image is only available on Base", "VALIDATION_ERROR");
+        process.exit(1);
+      }
+      return handlePaperPnlImage({ token: validateTokenAddress(opts.token) }, getContext());
+    });
 
   return cmd;
 }
