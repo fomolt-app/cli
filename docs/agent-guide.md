@@ -27,7 +27,7 @@ Key constraints:
 - Live buy trades are capped at 500 USDC (Base) or 10 SOL (Solana) per trade.
 - Base buys require --usdc (amount to spend). Solana buys require --sol (amount to spend). Sells require --quantity (tokens to sell).
 - Base token addresses are 0x-prefixed EVM contract addresses. Solana token addresses are base58 mint addresses (32-44 chars).
-- Default slippage is 5% for Base, 10% for Solana (pump.fun tokens are volatile).
+- Default slippage is 5% for Base, 10% for Solana (Solana tokens are volatile).
 - Credentials are stored locally at ~/.config/fomolt/cli/credentials.json.
 ```
 

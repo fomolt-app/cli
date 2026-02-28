@@ -17,7 +17,7 @@ export async function handlePaperPrice(
 }
 
 export async function handlePaperTrade(
-  opts: { side: string; token: string; chain: Chain; usdc?: string; sol?: string; quantity?: string; note?: string },
+  opts: { side: string; token: string; chain: Chain; usdc?: string; sol?: string; quantity?: string; percent?: string; note?: string },
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
@@ -29,7 +29,8 @@ export async function handlePaperTrade(
   };
   if (opts.usdc) body.amountUsdc = opts.usdc;
   if (opts.sol) body.amountSol = opts.sol;
-  if (opts.quantity) body.quantity = opts.quantity;
+  if (opts.chain === "solana" && opts.percent) body.percent = Number(opts.percent);
+  if (opts.chain === "base" && opts.quantity) body.quantity = opts.quantity;
   if (opts.note) body.note = opts.note;
   const data = await client.post(`/agent/paper/${prefix}/trade`, body);
   success(data);
@@ -108,7 +109,8 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .requiredOption("--token <address>", "Token address")
     .option("--usdc <amount>", "USDC to spend (Base buy orders)")
     .option("--sol <amount>", "SOL to spend (Solana buy orders)")
-    .option("--quantity <amount>", "Token quantity to sell (sell orders)")
+    .option("--quantity <amount>", "Token quantity to sell (Base sell orders)")
+    .option("--percent <pct>", "Percent of position to sell (Solana sell orders, 0.01-100)")
     .option("--note <text>", "Trade note")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
@@ -121,9 +123,24 @@ export function paperCommands(getContext: () => CmdContext): Command {
         error("Use --sol for Solana buys", "VALIDATION_ERROR");
         process.exit(1);
       }
+      if (chain === "solana" && opts.quantity) {
+        error("Use --percent for Solana sells (0.01-100)", "VALIDATION_ERROR");
+        process.exit(1);
+      }
+      if (chain === "base" && opts.percent) {
+        error("Use --quantity for Base sells", "VALIDATION_ERROR");
+        process.exit(1);
+      }
       if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
       if (opts.sol) validatePositiveNumber(opts.sol, "--sol");
       if (opts.quantity) validatePositiveNumber(opts.quantity, "--quantity");
+      if (opts.percent) {
+        const pct = Number(opts.percent);
+        if (isNaN(pct) || pct < 0.01 || pct > 100) {
+          error("--percent must be between 0.01 and 100", "VALIDATION_ERROR");
+          process.exit(1);
+        }
+      }
       return handlePaperTrade({ ...opts, chain }, getContext());
     });
 

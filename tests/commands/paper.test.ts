@@ -212,7 +212,7 @@ describe("paper Solana", () => {
     expect(url.pathname).toContain("/agent/paper/solana/trade");
   });
 
-  test("paper trade sell sends quantity (solana)", async () => {
+  test("paper trade sell sends percent (solana)", async () => {
     const mockFetch = mock(() =>
       Promise.resolve(
         new Response(
@@ -234,12 +234,12 @@ describe("paper Solana", () => {
 
     const { handlePaperTrade } = await import("../../src/commands/paper");
     await handlePaperTrade(
-      { side: "sell", token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", chain: "solana", quantity: "5000" },
+      { side: "sell", token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", chain: "solana", percent: "50" },
       { apiUrl: "https://fomolt.test", apiKey: "k" }
     );
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.quantity).toBe("5000");
+    expect(body.percent).toBe(50);
     expect(body.mintAddress).toBe("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
     expect(body.amountSol).toBeUndefined();
   });
