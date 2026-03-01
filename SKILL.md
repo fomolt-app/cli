@@ -168,8 +168,8 @@ fomolt paper performance --chain solana
 Real on-chain swaps on Base through your smart account. Max 500 USDC per buy trade.
 
 ```sh
-# Discover tokens
-fomolt live tokens --chain base [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>]
+# Discover tokens (with screening filters)
+fomolt live tokens --chain base [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
 
 # Get detailed token overview (price, market cap, volume, holders)
 fomolt live token-info --chain base --address <0x-address>
@@ -214,8 +214,11 @@ Default slippage is 5%. Token addresses are 0x-prefixed contract addresses on Ba
 Real on-chain swaps on Solana via Trade Router. Users pay their own gas in SOL. Max 10 SOL per buy trade.
 
 ```sh
-# Discover tokens
-fomolt live tokens --chain solana [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>]
+# Discover tokens (with screening filters)
+fomolt live tokens --chain solana [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
+
+# Get detailed token info (Helius-enriched: metadata, price, holders, security)
+fomolt live token-info --chain solana --address <mint-address>
 
 # Check a token's live price
 fomolt live price --chain solana --token <mint-address>
@@ -252,6 +255,18 @@ Default slippage is 10% (Solana tokens are highly volatile). Token addresses are
 
 **Note:** `session-key` is a Base-only command. Using `--chain solana` with it produces a `VALIDATION_ERROR`.
 
+### Bridge (Base ↔ Solana)
+
+| Command | Description |
+|---------|-------------|
+| `fomolt live bridge quote --direction base_to_solana --amount 50` | Preview USDC→SOL bridge |
+| `fomolt live bridge quote --direction solana_to_base --amount 1` | Preview SOL→USDC bridge |
+| `fomolt live bridge execute --direction base_to_solana --amount 50` | Execute USDC→SOL bridge |
+| `fomolt live bridge execute --direction solana_to_base --amount 1` | Execute SOL→USDC bridge |
+
+**Flags:** `--slippage <pct>` (default 3%), `--note <text>` (execute only)
+**Limits:** 5–500 USDC (base_to_solana), 0.05–10 SOL (solana_to_base)
+
 ### Watch (Polling Loops)
 
 Long-running commands that emit one JSON line per tick. Useful for monitoring.
@@ -264,6 +279,10 @@ fomolt watch portfolio --chain solana [--market paper|live] [--interval <seconds
 # Monitor token price
 fomolt watch price --chain base --token <0x-address> [--market paper|live] [--interval <seconds>]
 fomolt watch price --chain solana --token <mint-address> [--market paper|live] [--interval <seconds>]
+
+# Watch for new tokens (one JSON line per new token, deduped within session)
+fomolt watch tokens --chain solana [--interval <seconds>] [--min-liquidity <amount>] [--min-holders <count>]
+fomolt watch tokens --chain base [--interval <seconds>] [--min-liquidity <amount>] [--min-holders <count>]
 ```
 
 Defaults: `--market paper`, `--interval 10`.

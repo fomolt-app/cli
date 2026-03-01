@@ -329,3 +329,20 @@ fomolt live trade --side buy --token 0xTOKEN_ADDRESS --usdc 50
 # fomolt live quote --side buy --token MINT_ADDRESS --sol 2
 # fomolt live trade --side buy --token MINT_ADDRESS --sol 2
 ```
+
+### Workflow: Bridge
+
+```bash
+# Check balances on both chains
+fomolt live balance --chain base
+fomolt live balance --chain solana
+
+# Preview the bridge
+fomolt live bridge quote --direction base_to_solana --amount 50
+
+# Execute the bridge
+fomolt live bridge execute --direction base_to_solana --amount 50
+
+# Verify destination balance (wait 30-120s for delivery)
+fomolt live balance --chain solana
+```

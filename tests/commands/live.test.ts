@@ -249,7 +249,7 @@ describe("live Base", () => {
     expect(output.data.txHash).toBe("0xdef");
   });
 
-  test("live tokens sends filter params only for base", async () => {
+  test("live tokens sends filter params for base", async () => {
     const mockFetch = mock(() =>
       Promise.resolve(
         new Response(
@@ -286,7 +286,7 @@ describe("live Solana", () => {
     expect(url.pathname).toContain("/agent/live/solana/tokens");
   });
 
-  test("live tokens omits filter params for solana", async () => {
+  test("live tokens sends filter params for solana", async () => {
     const mockFetch = mock(() =>
       Promise.resolve(
         new Response(
@@ -304,9 +304,9 @@ describe("live Solana", () => {
     );
 
     const url = new URL(mockFetch.mock.calls[0][0]);
-    expect(url.searchParams.get("min_liquidity")).toBeNull();
-    expect(url.searchParams.get("min_volume_1h_usd")).toBeNull();
-    expect(url.searchParams.get("min_holder")).toBeNull();
+    expect(url.searchParams.get("min_liquidity")).toBe("1000");
+    expect(url.searchParams.get("min_volume_1h_usd")).toBe("500");
+    expect(url.searchParams.get("min_holder")).toBe("10");
   });
 
   test("live balance routes to solana portfolio", async () => {
@@ -451,6 +451,63 @@ describe("live Solana", () => {
     expect(url.searchParams.get("mintAddress")).toBe("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
   });
 
+  test("live token-info uses dedicated solana token-info endpoint", async () => {
+    mockApiResponse({
+      mintAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      name: "Test Token",
+      symbol: "TEST",
+      decimals: 9,
+      priceUsd: "0.05",
+      marketCapUsd: "500000",
+      holderCount: 1234,
+      mintAuthority: null,
+      freezeAuthority: null,
+      securityFlags: [],
+    });
+
+    const { handleLiveTokenInfo } = await import("../../src/commands/live");
+    await handleLiveTokenInfo(
+      { address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", chain: "solana" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const url = new URL((globalThis.fetch as any).mock.calls[0][0]);
+    expect(url.pathname).toContain("/agent/live/solana/token-info");
+    expect(url.searchParams.get("address")).toBe("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.ok).toBe(true);
+    expect(output.data.symbol).toBe("TEST");
+    expect(output.data.holderCount).toBe(1234);
+    expect(output.data.mintAuthority).toBeNull();
+  });
+
+  test("live tokens sends new filter params for solana", async () => {
+    const mockFetch = mock(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ success: true, response: { tokens: [], count: 0 } }),
+          { status: 200, headers: { "Content-Type": "application/json", "X-Request-Id": "r1" } }
+        )
+      )
+    );
+    globalThis.fetch = mockFetch as any;
+
+    const { handleLiveTokens } = await import("../../src/commands/live");
+    await handleLiveTokens(
+      { chain: "solana", minMarketCap: "10000", maxMarketCap: "1000000", minAge: "5", maxAge: "60", sort: "volume", order: "asc" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const url = new URL(mockFetch.mock.calls[0][0]);
+    expect(url.searchParams.get("min_market_cap")).toBe("10000");
+    expect(url.searchParams.get("max_market_cap")).toBe("1000000");
+    expect(url.searchParams.get("min_age")).toBe("5");
+    expect(url.searchParams.get("max_age")).toBe("60");
+    expect(url.searchParams.get("sort")).toBe("volume");
+    expect(url.searchParams.get("order")).toBe("asc");
+  });
+
   test("live withdraw routes to solana endpoint", async () => {
     const mockFetch = mock(() =>
       Promise.resolve(
@@ -513,19 +570,6 @@ describe("Base-only commands error on Solana", () => {
     expect(out.error).toContain("session-key");
   });
 
-  test("requireBase rejects solana for token-info", async () => {
-    const { requireBase } = await import("../../src/commands/live");
-    try {
-      requireBase("solana", "token-info");
-      throw new Error("expected exit");
-    } catch (e: any) {
-      expect(e.message).toBe("EXIT");
-    }
-    expect(exitCode).toBe(1);
-    const out = JSON.parse(stderr.join(""));
-    expect(out.error).toContain("token-info");
-  });
-
   test("withdraw still works for base", async () => {
     mockApiResponse({ txHash: "0xabc" });
     const { handleLiveWithdraw } = await import("../../src/commands/live");
@@ -537,5 +581,50 @@ describe("Base-only commands error on Solana", () => {
     expect(url.pathname).toContain("/agent/live/base/withdraw");
     const output = JSON.parse(stdout.join(""));
     expect(output.ok).toBe(true);
+  });
+});
+
+// --- Validators ---
+
+describe("validateSort and validateOrder", () => {
+  test("validateSort accepts valid sort values", async () => {
+    const { validateSort } = await import("../../src/validate");
+    expect(validateSort("trending")).toBe("trending");
+    expect(validateSort("volume")).toBe("volume");
+    expect(validateSort("market_cap")).toBe("market_cap");
+    expect(validateSort("holders")).toBe("holders");
+    expect(validateSort("created")).toBe("created");
+  });
+
+  test("validateSort rejects invalid sort value", async () => {
+    const { validateSort } = await import("../../src/validate");
+    try {
+      validateSort("invalid");
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.error).toContain("--sort");
+  });
+
+  test("validateOrder accepts asc and desc", async () => {
+    const { validateOrder } = await import("../../src/validate");
+    expect(validateOrder("asc")).toBe("asc");
+    expect(validateOrder("desc")).toBe("desc");
+  });
+
+  test("validateOrder rejects invalid order value", async () => {
+    const { validateOrder } = await import("../../src/validate");
+    try {
+      validateOrder("up");
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.error).toContain("--order");
   });
 });

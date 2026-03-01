@@ -105,6 +105,24 @@ export function validateTweetId(value: string): string {
   return value;
 }
 
+const VALID_SORTS = ["trending", "volume", "market_cap", "holders", "created"] as const;
+
+export function validateSort(value: string): string {
+  if (!VALID_SORTS.includes(value as any)) {
+    error(`--sort must be one of ${VALID_SORTS.join(", ")}, got "${value}"`, "VALIDATION_ERROR");
+    process.exit(1);
+  }
+  return value;
+}
+
+export function validateOrder(value: string): string {
+  if (value !== "asc" && value !== "desc") {
+    error(`--order must be "asc" or "desc", got "${value}"`, "VALIDATION_ERROR");
+    process.exit(1);
+  }
+  return value;
+}
+
 export function validateQuery(value: string): string {
   if (value.length === 0 || value.length > 500) {
     error(

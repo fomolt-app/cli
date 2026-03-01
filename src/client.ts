@@ -108,6 +108,15 @@ export class FomoltClient {
       });
     }
 
+    if (!json || typeof json !== "object") {
+      throw new ApiError({
+        message: `Server returned unexpected response (HTTP ${res.status})`,
+        statusCode: res.status,
+        code: `HTTP_${res.status}`,
+        requestId,
+      });
+    }
+
     if (!json.success) {
       const message =
         typeof json.response === "string"
