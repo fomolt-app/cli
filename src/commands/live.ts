@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { success, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-import { validateTokenAddress, validatePositiveNumber, validateLimit, validateSlippage, validateChain, validateAddress, type Chain } from "../validate";
+import { validateTokenAddress, validatePositiveNumber, validateLimit, validateSlippage, validateChain, validateAddress, validateSort, validateOrder, type Chain } from "../validate";
 
 export function requireBase(chain: Chain, command: string): void {
   if (chain !== "base") {
@@ -11,7 +11,7 @@ export function requireBase(chain: Chain, command: string): void {
 }
 
 export async function handleLiveTokens(
-  opts: { chain: Chain; mode?: string; term?: string; address?: string; limit?: string; minLiquidity?: string; minVolume1h?: string; minHolders?: string },
+  opts: { chain: Chain; mode?: string; term?: string; address?: string; limit?: string; minLiquidity?: string; minVolume1h?: string; minHolders?: string; minMarketCap?: string; maxMarketCap?: string; minAge?: string; maxAge?: string; sort?: string; order?: string },
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
@@ -21,11 +21,15 @@ export async function handleLiveTokens(
   else if (opts.mode) params.mode = opts.mode;
   if (opts.term) params.term = opts.term;
   if (opts.limit) params.limit = opts.limit;
-  if (opts.chain === "base") {
-    if (opts.minLiquidity) params.min_liquidity = opts.minLiquidity;
-    if (opts.minVolume1h) params.min_volume_1h_usd = opts.minVolume1h;
-    if (opts.minHolders) params.min_holder = opts.minHolders;
-  }
+  if (opts.minLiquidity) params.min_liquidity = opts.minLiquidity;
+  if (opts.minVolume1h) params.min_volume_1h_usd = opts.minVolume1h;
+  if (opts.minHolders) params.min_holder = opts.minHolders;
+  if (opts.minMarketCap) params.min_market_cap = opts.minMarketCap;
+  if (opts.maxMarketCap) params.max_market_cap = opts.maxMarketCap;
+  if (opts.minAge) params.min_age = opts.minAge;
+  if (opts.maxAge) params.max_age = opts.maxAge;
+  if (opts.sort) params.sort = opts.sort;
+  if (opts.order) params.order = opts.order;
   const data = await client.get(`/agent/live/${prefix}/tokens`, params);
   success(data);
 }
@@ -150,12 +154,41 @@ export async function handleLiveTokenInfo(
 ): Promise<void> {
   const client = await getAuthClient(ctx);
   if (opts.chain === "solana") {
-    const data = await client.get("/agent/live/solana/tokens", { address: opts.address });
-    success(data.tokens?.[0] ?? data);
+    const data = await client.get("/agent/live/solana/token-info", { address: opts.address });
+    success(data);
   } else {
     const data = await client.get("/agent/live/dex/token-info", { address: opts.address });
     success(data);
   }
+}
+
+export async function handleLiveBridgeQuote(
+  opts: { direction: string; amount: string; slippage?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const body: Record<string, string> = {
+    direction: opts.direction,
+    amount: opts.amount,
+  };
+  if (opts.slippage) body.slippage = opts.slippage;
+  const data = await client.post("/agent/live/bridge/quote", body);
+  success(data);
+}
+
+export async function handleLiveBridge(
+  opts: { direction: string; amount: string; slippage?: string; note?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const body: Record<string, string> = {
+    direction: opts.direction,
+    amount: opts.amount,
+  };
+  if (opts.slippage) body.slippage = opts.slippage;
+  if (opts.note) body.note = opts.note;
+  const data = await client.post("/agent/live/bridge", body);
+  success(data);
 }
 
 export async function handleLiveSessionKey(ctx: CmdContext): Promise<void> {
@@ -188,9 +221,15 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .option("--term <text>", "Search term (required for mode=search)")
     .option("--address <address>", "Exact address lookup (overrides mode)")
     .option("--limit <n>", "Max results (1-100)", "20")
-    .option("--min-liquidity <amount>", "Minimum liquidity filter (Base only, mode=new)")
-    .option("--min-volume-1h <amount>", "Minimum 1h volume in USD filter (Base only, mode=new)")
-    .option("--min-holders <count>", "Minimum holder count filter (Base only, mode=new)")
+    .option("--min-liquidity <amount>", "Minimum liquidity filter")
+    .option("--min-volume-1h <amount>", "Minimum 1h volume in USD filter")
+    .option("--min-holders <count>", "Minimum holder count filter")
+    .option("--min-market-cap <amount>", "Minimum market cap in USD")
+    .option("--max-market-cap <amount>", "Maximum market cap in USD")
+    .option("--min-age <minutes>", "Minimum token age in minutes")
+    .option("--max-age <minutes>", "Maximum token age in minutes")
+    .option("--sort <field>", "Sort by: trending, volume, market_cap, holders, created", "trending")
+    .option("--order <dir>", "Sort direction: asc or desc", "desc")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       validateLimit(opts.limit);
@@ -198,6 +237,12 @@ export function liveCommands(getContext: () => CmdContext): Command {
       if (opts.minLiquidity) validatePositiveNumber(opts.minLiquidity, "--min-liquidity");
       if (opts.minVolume1h) validatePositiveNumber(opts.minVolume1h, "--min-volume-1h");
       if (opts.minHolders) validatePositiveNumber(opts.minHolders, "--min-holders");
+      if (opts.minMarketCap) validatePositiveNumber(opts.minMarketCap, "--min-market-cap");
+      if (opts.maxMarketCap) validatePositiveNumber(opts.maxMarketCap, "--max-market-cap");
+      if (opts.minAge) validatePositiveNumber(opts.minAge, "--min-age");
+      if (opts.maxAge) validatePositiveNumber(opts.maxAge, "--max-age");
+      if (opts.sort) validateSort(opts.sort);
+      if (opts.order) validateOrder(opts.order);
       return handleLiveTokens({ ...opts, chain }, getContext());
     });
 
@@ -379,6 +424,47 @@ export function liveCommands(getContext: () => CmdContext): Command {
       validateAddress(opts.token, chain);
       return handleLivePrice({ ...opts, chain }, getContext());
     });
+
+  // ── Bridge subcommands ──
+
+  const bridge = new Command("bridge").description(
+    "Bridge funds between Base and Solana"
+  );
+
+  bridge
+    .command("quote")
+    .description("Get a bridge quote without executing")
+    .requiredOption("--direction <dir>", "Bridge direction: base_to_solana or solana_to_base")
+    .requiredOption("--amount <amount>", "Amount to bridge (USDC for base_to_solana, SOL for solana_to_base)")
+    .option("--slippage <pct>", "Slippage tolerance % (default 3)")
+    .action(async (opts) => {
+      if (opts.direction !== "base_to_solana" && opts.direction !== "solana_to_base") {
+        error('--direction must be "base_to_solana" or "solana_to_base"', "VALIDATION_ERROR");
+        process.exit(1);
+      }
+      validatePositiveNumber(opts.amount, "--amount");
+      if (opts.slippage) validateSlippage(opts.slippage);
+      return handleLiveBridgeQuote(opts, getContext());
+    });
+
+  bridge
+    .command("execute")
+    .description("Execute a cross-chain bridge transfer")
+    .requiredOption("--direction <dir>", "Bridge direction: base_to_solana or solana_to_base")
+    .requiredOption("--amount <amount>", "Amount to bridge (USDC for base_to_solana, SOL for solana_to_base)")
+    .option("--slippage <pct>", "Slippage tolerance % (default 3)")
+    .option("--note <text>", "Transfer note")
+    .action(async (opts) => {
+      if (opts.direction !== "base_to_solana" && opts.direction !== "solana_to_base") {
+        error('--direction must be "base_to_solana" or "solana_to_base"', "VALIDATION_ERROR");
+        process.exit(1);
+      }
+      validatePositiveNumber(opts.amount, "--amount");
+      if (opts.slippage) validateSlippage(opts.slippage);
+      return handleLiveBridge(opts, getContext());
+    });
+
+  cmd.addCommand(bridge);
 
   cmd
     .command("session-key")

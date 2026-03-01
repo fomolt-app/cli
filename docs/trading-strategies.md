@@ -136,6 +136,56 @@ for each position:
     fomolt paper trade --side sell --token position.token --quantity position.quantity
 ```
 
+## Token Screening
+
+Filter and screen tokens by multiple criteria to find candidates that match your risk profile. Works on both Base and Solana.
+
+**When to use:** You want to find tokens that meet specific criteria (liquidity, market cap, age, holders) before taking positions.
+
+### Command Sequence
+
+```sh
+# 1. Find micro-cap tokens with decent liquidity and holders
+fomolt live tokens --chain solana --mode new --min-liquidity 5000 --min-holders 50 --max-market-cap 500000 --limit 10
+
+# 2. Find established tokens sorted by volume
+fomolt live tokens --chain solana --mode trending --min-market-cap 100000 --sort volume --order desc --limit 10
+
+# 3. Find tokens created in the last hour
+fomolt live tokens --chain solana --mode new --max-age 60 --min-liquidity 1000 --limit 10
+
+# 4. Get detailed info on a candidate (metadata, holders, security flags)
+fomolt live token-info --chain solana --address <mint-address>
+# → Check securityFlags, mintAuthority, freezeAuthority, holderCount, topHolders
+
+# 5. Continuously watch for new tokens meeting your criteria
+fomolt watch tokens --chain solana --interval 10 --min-liquidity 5000 --min-holders 20
+# → One JSON line per new token (deduped), runs until stopped
+```
+
+### Decision Logic
+
+```
+# Screen for quality tokens
+candidates = fomolt live tokens --chain solana --mode new --min-liquidity 5000 --min-holders 50
+
+for each token in candidates.data:
+  info = fomolt live token-info --chain solana --address token.mintAddress
+
+  # Security checks
+  if "mintable" in info.securityFlags:
+    SKIP (mint authority not renounced — supply can increase)
+  if "freezable" in info.securityFlags:
+    SKIP (freeze authority not renounced — tokens can be frozen)
+
+  # Concentration check
+  if info.topHolders[0].percentage > 50:
+    SKIP (single holder owns majority)
+
+  # If passes all checks, take a small position
+  fomolt paper trade --chain solana --side buy --token token.mintAddress --sol 0.5
+```
+
 ## Take-Profit / Stop-Loss
 
 Set price thresholds and automatically exit positions.

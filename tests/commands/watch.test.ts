@@ -185,3 +185,105 @@ describe("watch Solana", () => {
     expect(body.amountUsdc).toBeUndefined();
   });
 });
+
+// --- Watch Tokens ---
+
+describe("watch tokens", () => {
+  test("watchTokens polls new tokens and deduplicates (solana)", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            success: true,
+            response: {
+              tokens: [
+                { mintAddress: "AAAA1111BBBB2222CCCC3333DDDD4444EEEE5555", symbol: "NEW1" },
+                { mintAddress: "FFFF6666GGGG7777HHHH8888IIII9999JJJJ0000", symbol: "NEW2" },
+              ],
+              count: 2,
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json", "X-Request-Id": "r1" } }
+        )
+      )
+    ) as any;
+
+    const { watchTokens } = await import("../../src/commands/watch");
+    await watchTokens(
+      { chain: "solana" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" },
+      { once: true }
+    );
+
+    const url = new URL((globalThis.fetch as any).mock.calls[0][0]);
+    expect(url.pathname).toContain("/agent/live/solana/tokens");
+    expect(url.searchParams.get("mode")).toBe("new");
+
+    // Should output two JSON lines (one per unique token)
+    expect(stdout.length).toBe(2);
+    const first = JSON.parse(stdout[0]);
+    const second = JSON.parse(stdout[1]);
+    expect(first.ok).toBe(true);
+    expect(first.data.symbol).toBe("NEW1");
+    expect(second.data.symbol).toBe("NEW2");
+  });
+
+  test("watchTokens passes filter params", async () => {
+    const mockFetch = mock(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            success: true,
+            response: { tokens: [], count: 0 },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json", "X-Request-Id": "r1" } }
+        )
+      )
+    );
+    globalThis.fetch = mockFetch as any;
+
+    const { watchTokens } = await import("../../src/commands/watch");
+    await watchTokens(
+      { chain: "solana", minLiquidity: "5000", minHolders: "20" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" },
+      { once: true }
+    );
+
+    const url = new URL(mockFetch.mock.calls[0][0]);
+    expect(url.searchParams.get("min_liquidity")).toBe("5000");
+    expect(url.searchParams.get("min_holder")).toBe("20");
+  });
+
+  test("watchTokens works for base chain", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            success: true,
+            response: {
+              tokens: [
+                { contractAddress: "0x1234567890abcdef1234567890abcdef12345678", symbol: "BASE1" },
+              ],
+              count: 1,
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json", "X-Request-Id": "r1" } }
+        )
+      )
+    ) as any;
+
+    const { watchTokens } = await import("../../src/commands/watch");
+    await watchTokens(
+      { chain: "base" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" },
+      { once: true }
+    );
+
+    const url = new URL((globalThis.fetch as any).mock.calls[0][0]);
+    expect(url.pathname).toContain("/agent/live/base/tokens");
+
+    expect(stdout.length).toBe(1);
+    const output = JSON.parse(stdout[0]);
+    expect(output.data.symbol).toBe("BASE1");
+  });
+});

@@ -255,10 +255,10 @@ On-chain trading on Base & Solana through your smart account. All commands requi
 
 ### `live tokens`
 
-Discover tradeable tokens.
+Discover tradeable tokens with optional screening filters.
 
 ```sh
-fomolt live tokens [--mode <mode>] [--term <text>] [--address <address>] [--limit <n>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>]
+fomolt live tokens [--mode <mode>] [--term <text>] [--address <address>] [--limit <n>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
 ```
 
 | Flag | Required | Default | Description |
@@ -267,13 +267,21 @@ fomolt live tokens [--mode <mode>] [--term <text>] [--address <address>] [--limi
 | `--term <text>` | no | — | Search term (required when `mode=search`) |
 | `--address <address>` | no | — | Exact contract address (Base) or mint address (Solana) lookup (overrides `--mode`) |
 | `--limit <n>` | no | `20` | Max results (1-100) |
-| `--min-liquidity <amount>` | no | — | Minimum liquidity filter (for `mode=new`) |
-| `--min-volume-1h <amount>` | no | — | Minimum 1h volume in USD filter (for `mode=new`) |
-| `--min-holders <count>` | no | — | Minimum holder count filter (for `mode=new`) |
+| `--min-liquidity <amount>` | no | — | Minimum liquidity filter |
+| `--min-volume-1h <amount>` | no | — | Minimum 1h volume in USD filter |
+| `--min-holders <count>` | no | — | Minimum holder count filter |
+| `--min-market-cap <amount>` | no | — | Minimum market cap in USD |
+| `--max-market-cap <amount>` | no | — | Maximum market cap in USD (find micro-caps) |
+| `--min-age <minutes>` | no | — | Minimum token age in minutes |
+| `--max-age <minutes>` | no | — | Maximum token age in minutes (find new tokens) |
+| `--sort <field>` | no | `trending` | Sort by: `trending`, `volume`, `market_cap`, `holders`, `created` |
+| `--order <dir>` | no | `desc` | Sort direction: `asc` or `desc` |
+
+All filter and sort flags work on both Base and Solana.
 
 ### `live token-info`
 
-Get a detailed token overview including price, market cap, volume, and holder count.
+Get a detailed token overview including price, market cap, volume, and holder count. On Solana, returns Helius-enriched data: metadata, price, market cap, top holders, supply, authorities, security flags, and token phase.
 
 ```sh
 fomolt live token-info --address <address>
@@ -424,6 +432,18 @@ fomolt live session-key
 ```
 
 No flags.
+
+---
+
+## Bridge
+
+| Command | Description | Auth |
+|---------|-------------|------|
+| `fomolt live bridge quote --direction <dir> --amount <amt>` | Get bridge quote | Yes |
+| `fomolt live bridge execute --direction <dir> --amount <amt>` | Execute bridge | Yes |
+
+**Options:** `--slippage <pct>` (default 3%), `--note <text>` (execute only)
+**Directions:** `base_to_solana`, `solana_to_base`
 
 ---
 
@@ -751,6 +771,21 @@ fomolt watch price --token <address> [--market <market>] [--interval <seconds>]
 | `--token <address>` | yes | — | Token contract address (0x + 40 hex chars for Base, or base58 mint address for Solana) |
 | `--market <market>` | no | `paper` | `paper` or `live` |
 | `--interval <seconds>` | no | `10` | Poll interval in seconds (1-3600) |
+
+### `watch tokens`
+
+Watch for new tokens. Emits one JSON line per new token, deduplicating by address within the session.
+
+```sh
+fomolt watch tokens --chain <chain> [--interval <seconds>] [--min-liquidity <amount>] [--min-holders <count>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
+| `--interval <seconds>` | no | `10` | Poll interval in seconds (1-3600) |
+| `--min-liquidity <amount>` | no | — | Minimum liquidity filter |
+| `--min-holders <count>` | no | — | Minimum holder count filter |
 
 ---
 
