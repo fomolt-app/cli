@@ -13,11 +13,11 @@ export function tokenCommands(getContext: () => CmdContext): Command {
   cmd
     .command("search")
     .description("Discover tradeable tokens")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .option("--mode <mode>", "Discovery mode: trending, search, new", "trending")
     .option("--term <text>", "Search term (required for mode=search)")
-    .option("--address <address>", "Exact address lookup (overrides mode)")
-    .option("--limit <n>", "Max results (1-100)", "20")
+    .option("-t, --token <address>", "Exact address lookup (overrides mode)")
+    .option("-n, --limit <n>", "Max results (1-100)", "20")
     .option("--min-liquidity <amount>", "Minimum liquidity filter")
     .option("--min-volume-1h <amount>", "Minimum 1h volume in USD filter")
     .option("--min-holders <count>", "Minimum holder count filter")
@@ -27,10 +27,11 @@ export function tokenCommands(getContext: () => CmdContext): Command {
     .option("--max-age <minutes>", "Maximum token age in minutes")
     .option("--sort <field>", "Sort by: trending, volume, market_cap, holders, created", "trending")
     .option("--order <dir>", "Sort direction: asc or desc", "desc")
+    .addHelpText("after", "\nExamples:\n  fomolt token search -c solana --mode trending\n  fomolt token search -c base --mode search --term \"pepe\"")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       validateLimit(opts.limit);
-      if (opts.address) validateAddress(opts.address, chain, "--address");
+      if (opts.token) validateAddress(opts.token, chain, "--token");
       if (opts.minLiquidity) validatePositiveNumber(opts.minLiquidity, "--min-liquidity");
       if (opts.minVolume1h) validatePositiveNumber(opts.minVolume1h, "--min-volume-1h");
       if (opts.minHolders) validatePositiveNumber(opts.minHolders, "--min-holders");
@@ -40,25 +41,26 @@ export function tokenCommands(getContext: () => CmdContext): Command {
       if (opts.maxAge) validatePositiveNumber(opts.maxAge, "--max-age");
       if (opts.sort) validateSort(opts.sort);
       if (opts.order) validateOrder(opts.order);
-      return handleLiveTokens({ ...opts, chain }, getContext(), { tokenInfoCmd: "fomolt token info" });
+      return handleLiveTokens({ ...opts, address: opts.token, chain }, getContext(), { tokenInfoCmd: "fomolt token info" });
     });
 
   cmd
     .command("info")
     .description("Get detailed token overview (price, market cap, volume, holders)")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--address <address>", "Token contract address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
+    .addHelpText("after", "\nExamples:\n  fomolt token info -c solana -t <mint>\n  fomolt token info -c base -t <address>")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
-      validateAddress(opts.address, chain, "--address");
-      return handleLiveTokenInfo({ address: opts.address, chain }, getContext());
+      validateAddress(opts.token, chain, "--token");
+      return handleLiveTokenInfo({ address: opts.token, chain }, getContext());
     });
 
   cmd
     .command("price")
     .description("Look up the current price of a token")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--token <address>", "Token address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token address")
     .option("--market <market>", "Price source: paper or live", "live")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
@@ -73,84 +75,84 @@ export function tokenCommands(getContext: () => CmdContext): Command {
   cmd
     .command("holders")
     .description("Get top token holders with balances")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--address <address>", "Token contract address")
-    .option("--limit <n>", "Max results (1-100)", "25")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
+    .option("-n, --limit <n>", "Max results (1-100)", "25")
     .option("--cursor <cursor>", "Pagination cursor")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
-      validateAddress(opts.address, chain, "--address");
+      validateAddress(opts.token, chain, "--token");
       validateLimit(opts.limit);
-      return handleLiveHolders({ address: opts.address, chain, limit: opts.limit, cursor: opts.cursor }, getContext());
+      return handleLiveHolders({ address: opts.token, chain, limit: opts.limit, cursor: opts.cursor }, getContext());
     });
 
   cmd
     .command("trades")
     .description("Get recent trade events for a token")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--address <address>", "Token contract address")
-    .option("--limit <n>", "Max results (1-100)", "25")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
+    .option("-n, --limit <n>", "Max results (1-100)", "25")
     .option("--cursor <cursor>", "Pagination cursor")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
-      validateAddress(opts.address, chain, "--address");
+      validateAddress(opts.token, chain, "--token");
       validateLimit(opts.limit);
-      return handleLiveTokenTrades({ address: opts.address, chain, limit: opts.limit, cursor: opts.cursor }, getContext());
+      return handleLiveTokenTrades({ address: opts.token, chain, limit: opts.limit, cursor: opts.cursor }, getContext());
     });
 
   cmd
     .command("wallets")
     .description("Discover wallets trading a specific token")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--address <address>", "Token contract address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
     .option("--sort <field>", "Sort by: pnl, volume", "pnl")
     .option("--period <period>", "Time period: 1d, 1w, 30d, 1y", "30d")
-    .option("--limit <n>", "Max results (1-100)", "20")
+    .option("-n, --limit <n>", "Max results (1-100)", "20")
     .option("--offset <n>", "Offset for pagination", "0")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
-      validateAddress(opts.address, chain, "--address");
+      validateAddress(opts.token, chain, "--token");
       if (opts.sort) validateTokenWalletSort(opts.sort);
       if (opts.period) validatePeriod(opts.period);
       validateLimit(opts.limit);
-      return handleLiveTokenWallets({ address: opts.address, chain, sort: opts.sort, period: opts.period, limit: opts.limit, offset: opts.offset }, getContext());
+      return handleLiveTokenWallets({ address: opts.token, chain, sort: opts.sort, period: opts.period, limit: opts.limit, offset: opts.offset }, getContext());
     });
 
   cmd
     .command("top-traders")
     .description("Get top traders for a specific token")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--address <address>", "Token contract address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
     .option("--period <period>", "Time period: 1d, 1w, 30d, 1y", "30d")
-    .option("--limit <n>", "Max results (1-100)", "25")
+    .option("-n, --limit <n>", "Max results (1-100)", "25")
     .option("--offset <n>", "Offset for pagination", "0")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
-      validateAddress(opts.address, chain, "--address");
+      validateAddress(opts.token, chain, "--token");
       if (opts.period) validatePeriod(opts.period);
       validateLimit(opts.limit);
-      return handleLiveTopTraders({ address: opts.address, chain, period: opts.period, limit: opts.limit, offset: opts.offset }, getContext());
+      return handleLiveTopTraders({ address: opts.token, chain, period: opts.period, limit: opts.limit, offset: opts.offset }, getContext());
     });
 
   cmd
     .command("sparklines")
     .description("Get sparkline price data for a token")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--address <address>", "Token contract address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
     .option("--resolution <res>", "Candle resolution (1S, 5S, 15S, 30S, 1, 5, 15, 30, 60, 240, 720, 1D, 7D)", "60")
     .option("--from <timestamp>", "Start unix timestamp")
     .option("--to <timestamp>", "End unix timestamp")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
-      validateAddress(opts.address, chain, "--address");
+      validateAddress(opts.token, chain, "--token");
       if (opts.resolution) validateSparklineResolution(opts.resolution);
-      return handleLiveSparklines({ address: opts.address, chain, resolution: opts.resolution, from: opts.from, to: opts.to }, getContext());
+      return handleLiveSparklines({ address: opts.token, chain, resolution: opts.resolution, from: opts.from, to: opts.to }, getContext());
     });
 
   cmd
     .command("pair-stats")
     .description("Get detailed statistics for a trading pair")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .requiredOption("--pair-address <address>", "Pair contract address")
     .option("--durations <list>", "Comma-separated durations: 5m, 15m, 1h, 4h, 12h, 1d, 1w, 30d", "1d")
     .option("--bucket-count <n>", "Number of time buckets")
@@ -169,7 +171,7 @@ export function tokenCommands(getContext: () => CmdContext): Command {
   cmd
     .command("liquidity-locks")
     .description("Get liquidity lock data for a token or pair")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .option("--pair-address <address>", "Pair contract address")
     .option("--token-address <address>", "Token contract address")
     .option("--cursor <cursor>", "Pagination cursor")
@@ -187,51 +189,51 @@ export function tokenCommands(getContext: () => CmdContext): Command {
   cmd
     .command("lifecycle")
     .description("Get mint/burn lifecycle events for a token")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--address <address>", "Token contract address")
-    .option("--limit <n>", "Max results (1-100)", "25")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
+    .option("-n, --limit <n>", "Max results (1-100)", "25")
     .option("--cursor <cursor>", "Pagination cursor")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
-      validateAddress(opts.address, chain, "--address");
+      validateAddress(opts.token, chain, "--token");
       validateLimit(opts.limit);
-      return handleLiveLifecycleEvents({ address: opts.address, chain, limit: opts.limit, cursor: opts.cursor }, getContext());
+      return handleLiveLifecycleEvents({ address: opts.token, chain, limit: opts.limit, cursor: opts.cursor }, getContext());
     });
 
   cmd
     .command("pairs")
     .description("List trading pairs for a token with metadata")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--address <address>", "Token contract address")
-    .option("--limit <n>", "Max results (1-100)", "25")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
+    .option("-n, --limit <n>", "Max results (1-100)", "25")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
-      validateAddress(opts.address, chain, "--address");
+      validateAddress(opts.token, chain, "--token");
       validateLimit(opts.limit);
-      return handleLiveTokenPairs({ address: opts.address, chain, limit: opts.limit }, getContext());
+      return handleLiveTokenPairs({ address: opts.token, chain, limit: opts.limit }, getContext());
     });
 
   cmd
     .command("community-notes")
     .description("Get community reports (scam flags, logo changes) for tokens")
-    .option("--chain <chain>", "Chain: base or solana")
-    .option("--address <address>", "Token contract address")
+    .option("-c, --chain <chain>", "Chain: base or solana")
+    .option("-t, --token <address>", "Token contract address")
     .option("--proposal-type <type>", "Filter by type: SCAM, LOGO, ATTRIBUTE")
-    .option("--limit <n>", "Max results (1-100)", "25")
+    .option("-n, --limit <n>", "Max results (1-100)", "25")
     .option("--cursor <cursor>", "Pagination cursor")
     .action(async (opts) => {
       let chain: "base" | "solana" | undefined;
       if (opts.chain) chain = validateChain(opts.chain);
-      if (opts.address) {
+      if (opts.token) {
         if (!chain) {
-          cliError("--chain is required when filtering by --address", "INVALID_ARGS");
+          cliError("--chain is required when filtering by --token", "INVALID_ARGS");
           process.exit(1);
         }
-        validateAddress(opts.address, chain, "--address");
+        validateAddress(opts.token, chain, "--token");
       }
       if (opts.proposalType) validateProposalType(opts.proposalType);
       validateLimit(opts.limit);
-      return handleLiveCommunityNotes({ chain, address: opts.address, proposalType: opts.proposalType, limit: opts.limit, cursor: opts.cursor }, getContext());
+      return handleLiveCommunityNotes({ chain, address: opts.token, proposalType: opts.proposalType, limit: opts.limit, cursor: opts.cursor }, getContext());
     });
 
   return cmd;

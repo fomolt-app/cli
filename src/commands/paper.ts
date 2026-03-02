@@ -92,26 +92,17 @@ export function paperCommands(getContext: () => CmdContext): Command {
   );
 
   cmd
-    .command("price")
-    .description("[MOVED] Use: fomolt token price --chain <chain> --token <address> --market paper")
-    .allowUnknownOption()
-    .allowExcessArguments()
-    .action(async () => {
-      error("This command has moved. Use: fomolt token price --chain <chain> --token <address> --market paper", "COMMAND_MOVED");
-      process.exit(1);
-    });
-
-  cmd
     .command("trade")
     .description("Buy or sell a token. Base buys: --usdc. Base sells: --quantity. Solana buys: --sol. Solana sells: --percent (0.01-100)")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--side <side>", "buy or sell")
-    .requiredOption("--token <address>", "Token address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-s, --side <side>", "buy or sell")
+    .requiredOption("-t, --token <address>", "Token address")
     .option("--usdc <amount>", "USDC to spend (Base buy orders)")
     .option("--sol <amount>", "SOL to spend (Solana buy orders)")
     .option("--quantity <amount>", "Token quantity to sell (Base sell orders)")
     .option("--percent <pct>", "Percent of position to sell (Solana sell orders, 0.01-100)")
     .option("--note <text>", "Trade note")
+    .addHelpText("after", "\nExamples:\n  fomolt paper trade -c base -s buy -t <address> --usdc 500\n  fomolt paper trade -c solana -s sell -t <mint> --percent 50")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       validateAddress(opts.token, chain);
@@ -147,7 +138,7 @@ export function paperCommands(getContext: () => CmdContext): Command {
   cmd
     .command("portfolio")
     .description("View paper portfolio and positions")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       return handlePaperPortfolio({ chain }, getContext());
@@ -156,11 +147,11 @@ export function paperCommands(getContext: () => CmdContext): Command {
   cmd
     .command("trades")
     .description("View paper trade history")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .option("--cursor <cursor>", "Pagination cursor")
-    .option("--limit <n>", "Max results (1-100)")
-    .option("--token <address>", "Filter by token")
-    .option("--side <side>", "Filter by side (buy/sell)")
+    .option("-n, --limit <n>", "Max results (1-100)")
+    .option("-t, --token <address>", "Filter by token")
+    .option("-s, --side <side>", "Filter by side (buy/sell)")
     .option("--start-date <date>", "Filter from ISO datetime")
     .option("--end-date <date>", "Filter to ISO datetime")
     .option("--sort <order>", "Sort order (asc/desc)")
@@ -187,7 +178,7 @@ export function paperCommands(getContext: () => CmdContext): Command {
   cmd
     .command("performance")
     .description("View paper performance metrics")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       return handlePaperPerformance({ chain }, getContext());
@@ -196,8 +187,8 @@ export function paperCommands(getContext: () => CmdContext): Command {
   cmd
     .command("pnl-image")
     .description("Generate PnL card image for a position")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--token <address>", "Token contract address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       if (chain !== "base") {

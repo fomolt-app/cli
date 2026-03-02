@@ -313,28 +313,6 @@ describe("hintCLI injection", () => {
   });
 });
 
-// --- Deprecation stubs ---
-
-describe("COMMAND_MOVED stubs", () => {
-  test("paper price stub exits with COMMAND_MOVED", async () => {
-    const { paperCommands } = await import("../../src/commands/paper");
-    const cmd = paperCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
-    const priceCmd = cmd.commands.find((c: any) => c.name() === "price");
-    expect(priceCmd).toBeDefined();
-    try {
-      await priceCmd!.parseAsync(["price"], { from: "user" });
-      throw new Error("expected exit");
-    } catch (e: any) {
-      expect(e.message).toBe("EXIT");
-    }
-    expect(exitCode).toBe(1);
-    const out = JSON.parse(stderr.join(""));
-    expect(out.code).toBe("COMMAND_MOVED");
-    expect(out.error).toContain("fomolt token price");
-    expect(out.error).toContain("--market paper");
-  });
-});
-
 // --- pnl-image Base-only ---
 
 describe("paper pnl-image", () => {

@@ -97,7 +97,7 @@ export function watchCommands(getContext: () => CmdContext): Command {
   cmd
     .command("portfolio")
     .description("Watch portfolio value (one JSON line per tick)")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .option("--market <market>", "paper or live", "paper")
     .option("--interval <seconds>", "Poll interval in seconds", "10")
     .action(async (opts) => {
@@ -111,8 +111,8 @@ export function watchCommands(getContext: () => CmdContext): Command {
   cmd
     .command("price")
     .description("Watch token price (one JSON line per tick)")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--token <address>", "Token address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token address")
     .option("--market <market>", "paper or live", "paper")
     .option("--interval <seconds>", "Poll interval in seconds", "10")
     .action(async (opts) => {
@@ -126,7 +126,7 @@ export function watchCommands(getContext: () => CmdContext): Command {
   cmd
     .command("tokens")
     .description("Watch for new tokens (one JSON line per new token, deduped)")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .option("--interval <seconds>", "Poll interval in seconds", "10")
     .option("--min-liquidity <amount>", "Minimum liquidity filter")
     .option("--min-holders <count>", "Minimum holder count filter")

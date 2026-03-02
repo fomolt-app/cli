@@ -80,7 +80,7 @@ describe("token search", () => {
     );
 
     const output = JSON.parse(stdout.join(""));
-    expect(output.data.hintCLI).toBe("Get details: fomolt token info --chain base --address 0xabc");
+    expect(output.data.hintCLI).toBe("Get details: fomolt token info --chain base --token 0xabc");
   });
 
   test("token search with solana uses solana endpoint", async () => {

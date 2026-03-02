@@ -155,7 +155,7 @@ fomolt token search --chain solana --mode trending --min-market-cap 100000 --sor
 fomolt token search --chain solana --mode new --max-age 60 --min-liquidity 1000 --limit 10
 
 # 4. Get detailed info on a candidate (metadata, holders, security flags)
-fomolt token info --chain solana --address <mint-address>
+fomolt token info -c solana -t <mint-address>
 # → Check securityFlags, mintAuthority, freezeAuthority, holderCount, topHolders
 
 # 5. Continuously watch for new tokens meeting your criteria
@@ -170,7 +170,7 @@ fomolt watch tokens --chain solana --interval 10 --min-liquidity 5000 --min-hold
 candidates = fomolt token search --chain solana --mode new --min-liquidity 5000 --min-holders 50
 
 for each token in candidates.data:
-  info = fomolt token info --chain solana --address token.mintAddress
+  info = fomolt token info -c solana -t token.mintAddress
 
   # Security checks
   if "mintable" in info.securityFlags:

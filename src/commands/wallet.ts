@@ -9,7 +9,7 @@ export function walletCommands(getContext: () => CmdContext): Command {
     .description("Wallet analytics (both chains)");
 
   cmd
-    .option("--chain <chain>", "Chain: base or solana")
+    .option("-c, --chain <chain>", "Chain: base or solana")
     .option("--address <address>", "Wallet address")
     .option("--mode <mode>", "Mode: stats, trades, chart, balances", "stats")
     .option("--limit <n>", "Max results for trades/balances (1-100)", "25")
