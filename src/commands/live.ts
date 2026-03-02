@@ -1,11 +1,11 @@
 import { Command } from "commander";
-import { success, error } from "../output";
+import { success, successWithHint, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-import { validateTokenAddress, validatePositiveNumber, validateLimit, validateSlippage, validateChain, validateAddress, validateSort, validateOrder, type Chain } from "../validate";
+import { validateTokenAddress, validatePositiveNumber, validateLimit, validateSlippage, validateChain, validateAddress, validateSort, validateOrder, validateWalletSort, validateTokenWalletSort, validatePeriod, validateWalletMode, type Chain } from "../validate";
 
 export function requireBase(chain: Chain, command: string): void {
   if (chain !== "base") {
-    error(`${command} is only available on Base`, "VALIDATION_ERROR");
+    error(`${command} is only available on Base`, "INVALID_CHAIN");
     process.exit(1);
   }
 }
@@ -31,7 +31,13 @@ export async function handleLiveTokens(
   if (opts.sort) params.sort = opts.sort;
   if (opts.order) params.order = opts.order;
   const data = await client.get(`/agent/live/${prefix}/tokens`, params);
-  success(data);
+  const tokens = data && typeof data === "object" && Array.isArray((data as any).tokens) ? (data as any).tokens : [];
+  if (tokens.length > 0) {
+    const firstAddr = tokens[0].contractAddress || tokens[0].mintAddress || tokens[0].address;
+    successWithHint(data, `Get details: fomolt live token-info --chain ${opts.chain} --address ${firstAddr}`);
+  } else {
+    success(data);
+  }
 }
 
 export async function handleLiveBalance(
@@ -71,7 +77,8 @@ export async function handleLiveQuote(
   if (opts.quantity) body.quantity = opts.quantity;
   if (opts.slippage) body.slippage = opts.slippage;
   const data = await client.post(`/agent/live/${prefix}/quote`, body);
-  success(data);
+  const amtFlag = opts.usdc ? `--usdc ${opts.usdc}` : opts.sol ? `--sol ${opts.sol}` : opts.quantity ? `--quantity ${opts.quantity}` : "";
+  successWithHint(data, `Execute: fomolt live trade --chain ${opts.chain} --side ${opts.side} --token ${opts.token} ${amtFlag}`.trim());
 }
 
 export async function handleLiveTrade(
@@ -92,7 +99,7 @@ export async function handleLiveTrade(
   if (opts.slippage) body.slippage = opts.slippage;
   if (opts.note) body.note = opts.note;
   const data = await client.post(`/agent/live/${prefix}/trade`, body);
-  success(data);
+  successWithHint(data, `Check portfolio: fomolt live portfolio --chain ${opts.chain}`);
 }
 
 export async function handleLiveWithdraw(
@@ -105,7 +112,7 @@ export async function handleLiveWithdraw(
     amount: opts.amount,
     to: opts.to,
   });
-  success(data);
+  successWithHint(data, `Check balance: fomolt live balance --chain ${opts.chain}`);
 }
 
 export async function handleLivePortfolio(
@@ -153,12 +160,14 @@ export async function handleLiveTokenInfo(
   ctx: CmdContext
 ): Promise<void> {
   const client = await getAuthClient(ctx);
+  const quoteFlag = opts.chain === "base" ? "--usdc 10" : "--sol 0.1";
+  const hint = `Get a quote: fomolt live quote --chain ${opts.chain} --side buy --token ${opts.address} ${quoteFlag}`;
   if (opts.chain === "solana") {
     const data = await client.get("/agent/live/solana/token-info", { address: opts.address });
-    success(data);
+    successWithHint(data, hint);
   } else {
     const data = await client.get("/agent/live/dex/token-info", { address: opts.address });
-    success(data);
+    successWithHint(data, hint);
   }
 }
 
@@ -173,7 +182,7 @@ export async function handleLiveBridgeQuote(
   };
   if (opts.slippage) body.slippage = opts.slippage;
   const data = await client.post("/agent/live/bridge/quote", body);
-  success(data);
+  successWithHint(data, `Execute: fomolt live bridge execute --direction ${opts.direction} --amount ${opts.amount}`);
 }
 
 export async function handleLiveBridge(
@@ -188,7 +197,7 @@ export async function handleLiveBridge(
   if (opts.slippage) body.slippage = opts.slippage;
   if (opts.note) body.note = opts.note;
   const data = await client.post("/agent/live/bridge", body);
-  success(data);
+  successWithHint(data, `Check balances: fomolt live balance --chain base && fomolt live balance --chain solana`);
 }
 
 export async function handleLiveSessionKey(ctx: CmdContext): Promise<void> {
@@ -205,6 +214,75 @@ export async function handleLivePrice(
   const prefix = opts.chain;
   const addrField = opts.chain === "base" ? "contractAddress" : "mintAddress";
   const data = await client.get(`/agent/live/${prefix}/price`, { [addrField]: opts.token });
+  success(data);
+}
+
+export async function handleLiveHolders(
+  opts: { address: string; chain: Chain; limit?: string; cursor?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { address: opts.address, chain: opts.chain };
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.cursor) params.cursor = opts.cursor;
+  const data = await client.get("/agent/live/dex/holders", params);
+  success(data);
+}
+
+export async function handleLiveTokenTrades(
+  opts: { address: string; chain: Chain; limit?: string; cursor?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { address: opts.address, chain: opts.chain };
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.cursor) params.cursor = opts.cursor;
+  const data = await client.get("/agent/live/dex/token-trades", params);
+  success(data);
+}
+
+export async function handleLiveWallet(
+  opts: { address: string; chain: Chain; mode?: string; limit?: string; cursor?: string; token?: string; resolution?: string; start?: string; end?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { address: opts.address, chain: opts.chain };
+  if (opts.mode) params.mode = opts.mode;
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.cursor) params.cursor = opts.cursor;
+  if (opts.token) params.token = opts.token;
+  if (opts.resolution) params.resolution = opts.resolution;
+  if (opts.start) params.start = opts.start;
+  if (opts.end) params.end = opts.end;
+  const data = await client.get("/agent/live/dex/wallet", params);
+  success(data);
+}
+
+export async function handleLiveTopWallets(
+  opts: { chain: Chain; sort?: string; period?: string; limit?: string; offset?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { chain: opts.chain };
+  if (opts.sort) params.sort = opts.sort;
+  if (opts.period) params.period = opts.period;
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.offset) params.offset = opts.offset;
+  const data = await client.get("/agent/live/dex/top-wallets", params);
+  success(data);
+}
+
+export async function handleLiveTokenWallets(
+  opts: { address: string; chain: Chain; sort?: string; period?: string; limit?: string; offset?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { address: opts.address, chain: opts.chain };
+  if (opts.sort) params.sort = opts.sort;
+  if (opts.period) params.period = opts.period;
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.offset) params.offset = opts.offset;
+  const data = await client.get("/agent/live/dex/token-wallets", params);
   success(data);
 }
 
@@ -258,6 +336,91 @@ export function liveCommands(getContext: () => CmdContext): Command {
     });
 
   cmd
+    .command("holders")
+    .description("Get top token holders with balances")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("--address <address>", "Token contract address")
+    .option("--limit <n>", "Max results (1-100)", "25")
+    .option("--cursor <cursor>", "Pagination cursor")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      validateAddress(opts.address, chain, "--address");
+      validateLimit(opts.limit);
+      return handleLiveHolders({ address: opts.address, chain, limit: opts.limit, cursor: opts.cursor }, getContext());
+    });
+
+  cmd
+    .command("token-trades")
+    .description("Get recent trade events for a token")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("--address <address>", "Token contract address")
+    .option("--limit <n>", "Max results (1-100)", "25")
+    .option("--cursor <cursor>", "Pagination cursor")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      validateAddress(opts.address, chain, "--address");
+      validateLimit(opts.limit);
+      return handleLiveTokenTrades({ address: opts.address, chain, limit: opts.limit, cursor: opts.cursor }, getContext());
+    });
+
+  cmd
+    .command("wallet")
+    .description("Analyze a wallet: stats, trades, chart, or balances")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("--address <address>", "Wallet address")
+    .option("--mode <mode>", "Mode: stats, trades, chart, balances", "stats")
+    .option("--limit <n>", "Max results for trades/balances (1-100)", "25")
+    .option("--cursor <cursor>", "Pagination cursor (trades/balances)")
+    .option("--token <address>", "Filter trades by token address")
+    .option("--resolution <res>", "Chart resolution (e.g. 1D, 1H)", "1D")
+    .option("--start <timestamp>", "Chart start unix timestamp")
+    .option("--end <timestamp>", "Chart end unix timestamp")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      validateAddress(opts.address, chain, "--address");
+      if (opts.mode) validateWalletMode(opts.mode);
+      if (opts.mode === "trades" || opts.mode === "balances") {
+        validateLimit(opts.limit);
+      }
+      if (opts.token) validateAddress(opts.token, chain, "--token");
+      return handleLiveWallet({ ...opts, chain }, getContext());
+    });
+
+  cmd
+    .command("top-wallets")
+    .description("Discover top-performing wallets")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .option("--sort <field>", "Sort by: pnl, volume, win-rate", "pnl")
+    .option("--period <period>", "Time period: 1d, 1w, 30d, 1y", "30d")
+    .option("--limit <n>", "Max results (1-100)", "20")
+    .option("--offset <n>", "Offset for pagination", "0")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      if (opts.sort) validateWalletSort(opts.sort);
+      if (opts.period) validatePeriod(opts.period);
+      validateLimit(opts.limit);
+      return handleLiveTopWallets({ chain, sort: opts.sort, period: opts.period, limit: opts.limit, offset: opts.offset }, getContext());
+    });
+
+  cmd
+    .command("token-wallets")
+    .description("Discover wallets trading a specific token")
+    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("--address <address>", "Token contract address")
+    .option("--sort <field>", "Sort by: pnl, volume", "pnl")
+    .option("--period <period>", "Time period: 1d, 1w, 30d, 1y", "30d")
+    .option("--limit <n>", "Max results (1-100)", "20")
+    .option("--offset <n>", "Offset for pagination", "0")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      validateAddress(opts.address, chain, "--address");
+      if (opts.sort) validateTokenWalletSort(opts.sort);
+      if (opts.period) validatePeriod(opts.period);
+      validateLimit(opts.limit);
+      return handleLiveTokenWallets({ address: opts.address, chain, sort: opts.sort, period: opts.period, limit: opts.limit, offset: opts.offset }, getContext());
+    });
+
+  cmd
     .command("balance")
     .description("Check account balance")
     .requiredOption("--chain <chain>", "Chain: base or solana")
@@ -277,7 +440,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
 
   cmd
     .command("quote")
-    .description("Get a swap quote without executing")
+    .description("Get a swap quote without executing. Base buys: --usdc. Solana buys: --sol. Sells: --quantity (Base) or --percent (Solana)")
     .requiredOption("--chain <chain>", "Chain: base or solana")
     .requiredOption("--side <side>", "buy or sell")
     .requiredOption("--token <address>", "Token address")
@@ -289,11 +452,11 @@ export function liveCommands(getContext: () => CmdContext): Command {
       const chain = validateChain(opts.chain);
       validateAddress(opts.token, chain);
       if (chain === "base" && opts.sol) {
-        error("Use --usdc for Base buys", "VALIDATION_ERROR");
+        error("Use --usdc for Base buys, --sol is for Solana", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (chain === "solana" && opts.usdc) {
-        error("Use --sol for Solana buys", "VALIDATION_ERROR");
+        error("Use --sol for Solana buys, --usdc is for Base", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
@@ -305,7 +468,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
 
   cmd
     .command("trade")
-    .description("Execute an on-chain token swap")
+    .description("Execute an on-chain token swap. Base buys: --usdc. Base sells: --quantity. Solana buys: --sol. Solana sells: --percent")
     .requiredOption("--chain <chain>", "Chain: base or solana")
     .requiredOption("--side <side>", "buy or sell")
     .requiredOption("--token <address>", "Token address")
@@ -319,19 +482,19 @@ export function liveCommands(getContext: () => CmdContext): Command {
       const chain = validateChain(opts.chain);
       validateAddress(opts.token, chain);
       if (chain === "base" && opts.sol) {
-        error("Use --usdc for Base buys", "VALIDATION_ERROR");
+        error("Use --usdc for Base buys, --sol is for Solana", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (chain === "solana" && opts.usdc) {
-        error("Use --sol for Solana buys", "VALIDATION_ERROR");
+        error("Use --sol for Solana buys, --usdc is for Base", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (opts.quantity && chain === "solana") {
-        error("Use --percent for Solana sells, --quantity is for Base only", "VALIDATION_ERROR");
+        error("Use --percent for Solana sells, --quantity is for Base only", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (opts.percent && chain !== "solana") {
-        error("--percent is only supported for Solana sells", "VALIDATION_ERROR");
+        error("Use --quantity for Base sells, --percent is for Solana only", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
@@ -341,7 +504,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
         validatePositiveNumber(opts.percent, "--percent");
         const pct = parseFloat(opts.percent);
         if (pct < 0.01 || pct > 100) {
-          error("--percent must be between 0.01 and 100", "VALIDATION_ERROR");
+          error("--percent must be between 0.01 and 100", "INVALID_AMOUNT");
           process.exit(1);
         }
       }
@@ -433,13 +596,13 @@ export function liveCommands(getContext: () => CmdContext): Command {
 
   bridge
     .command("quote")
-    .description("Get a bridge quote without executing")
+    .description("Get a bridge quote. base_to_solana: amount in USDC. solana_to_base: amount in SOL")
     .requiredOption("--direction <dir>", "Bridge direction: base_to_solana or solana_to_base")
     .requiredOption("--amount <amount>", "Amount to bridge (USDC for base_to_solana, SOL for solana_to_base)")
     .option("--slippage <pct>", "Slippage tolerance % (default 3)")
     .action(async (opts) => {
       if (opts.direction !== "base_to_solana" && opts.direction !== "solana_to_base") {
-        error('--direction must be "base_to_solana" or "solana_to_base"', "VALIDATION_ERROR");
+        error('--direction must be "base_to_solana" or "solana_to_base"', "INVALID_DIRECTION");
         process.exit(1);
       }
       validatePositiveNumber(opts.amount, "--amount");
@@ -449,14 +612,14 @@ export function liveCommands(getContext: () => CmdContext): Command {
 
   bridge
     .command("execute")
-    .description("Execute a cross-chain bridge transfer")
+    .description("Execute a bridge transfer. base_to_solana: amount in USDC. solana_to_base: amount in SOL")
     .requiredOption("--direction <dir>", "Bridge direction: base_to_solana or solana_to_base")
     .requiredOption("--amount <amount>", "Amount to bridge (USDC for base_to_solana, SOL for solana_to_base)")
     .option("--slippage <pct>", "Slippage tolerance % (default 3)")
     .option("--note <text>", "Transfer note")
     .action(async (opts) => {
       if (opts.direction !== "base_to_solana" && opts.direction !== "solana_to_base") {
-        error('--direction must be "base_to_solana" or "solana_to_base"', "VALIDATION_ERROR");
+        error('--direction must be "base_to_solana" or "solana_to_base"', "INVALID_DIRECTION");
         process.exit(1);
       }
       validatePositiveNumber(opts.amount, "--amount");

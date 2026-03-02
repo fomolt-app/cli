@@ -33,7 +33,7 @@ afterEach(() => {
   process.exit = originalExit;
 });
 
-function expectValidationError(fn: () => void): any {
+function expectError(fn: () => void, expectedCode?: string): any {
   try {
     fn();
     throw new Error("expected exit");
@@ -43,7 +43,7 @@ function expectValidationError(fn: () => void): any {
   expect(exitCode).toBe(1);
   const out = JSON.parse(stderr.join(""));
   expect(out.ok).toBe(false);
-  expect(out.code).toBe("VALIDATION_ERROR");
+  if (expectedCode) expect(out.code).toBe(expectedCode);
   return out;
 }
 
@@ -62,31 +62,31 @@ describe("validateInt", () => {
   });
 
   test("NaN input", () => {
-    expectValidationError(() => validateInt("abc", "--interval", 1, 3600));
+    expectError(() => validateInt("abc", "--interval", 1, 3600), "INVALID_AMOUNT");
   });
 
   test("float input", () => {
-    expectValidationError(() => validateInt("3.5", "--interval", 1, 3600));
+    expectError(() => validateInt("3.5", "--interval", 1, 3600), "INVALID_AMOUNT");
   });
 
   test("below min", () => {
-    expectValidationError(() => validateInt("0", "--interval", 1, 3600));
+    expectError(() => validateInt("0", "--interval", 1, 3600), "INVALID_AMOUNT");
   });
 
   test("above max", () => {
-    expectValidationError(() => validateInt("3601", "--interval", 1, 3600));
+    expectError(() => validateInt("3601", "--interval", 1, 3600), "INVALID_AMOUNT");
   });
 
   test("empty string", () => {
-    expectValidationError(() => validateInt("", "--interval", 1, 3600));
+    expectError(() => validateInt("", "--interval", 1, 3600), "INVALID_AMOUNT");
   });
 
   test("negative number", () => {
-    expectValidationError(() => validateInt("-5", "--interval", 1, 3600));
+    expectError(() => validateInt("-5", "--interval", 1, 3600), "INVALID_AMOUNT");
   });
 
   test("string NaN", () => {
-    expectValidationError(() => validateInt("NaN", "--interval", 1, 3600));
+    expectError(() => validateInt("NaN", "--interval", 1, 3600), "INVALID_AMOUNT");
   });
 });
 
@@ -101,35 +101,35 @@ describe("validatePositiveNumber", () => {
   });
 
   test("zero", () => {
-    expectValidationError(() => validatePositiveNumber("0", "--usdc"));
+    expectError(() => validatePositiveNumber("0", "--usdc"), "INVALID_AMOUNT");
   });
 
   test("negative", () => {
-    expectValidationError(() => validatePositiveNumber("-10", "--usdc"));
+    expectError(() => validatePositiveNumber("-10", "--usdc"), "INVALID_AMOUNT");
   });
 
   test("NaN", () => {
-    expectValidationError(() => validatePositiveNumber("xyz", "--usdc"));
+    expectError(() => validatePositiveNumber("xyz", "--usdc"), "INVALID_AMOUNT");
   });
 
   test("empty string", () => {
-    expectValidationError(() => validatePositiveNumber("", "--usdc"));
+    expectError(() => validatePositiveNumber("", "--usdc"), "INVALID_AMOUNT");
   });
 
   test("Infinity", () => {
-    expectValidationError(() => validatePositiveNumber("Infinity", "--usdc"));
+    expectError(() => validatePositiveNumber("Infinity", "--usdc"), "INVALID_AMOUNT");
   });
 
   test("-Infinity", () => {
-    expectValidationError(() => validatePositiveNumber("-Infinity", "--usdc"));
+    expectError(() => validatePositiveNumber("-Infinity", "--usdc"), "INVALID_AMOUNT");
   });
 
   test("zero as 0.0", () => {
-    expectValidationError(() => validatePositiveNumber("0.0", "--usdc"));
+    expectError(() => validatePositiveNumber("0.0", "--usdc"), "INVALID_AMOUNT");
   });
 
   test("negative zero", () => {
-    expectValidationError(() => validatePositiveNumber("-0", "--usdc"));
+    expectError(() => validatePositiveNumber("-0", "--usdc"), "INVALID_AMOUNT");
   });
 });
 
@@ -148,15 +148,15 @@ describe("validateLimit", () => {
   });
 
   test("zero", () => {
-    expectValidationError(() => validateLimit("0"));
+    expectError(() => validateLimit("0"), "INVALID_AMOUNT");
   });
 
   test("101", () => {
-    expectValidationError(() => validateLimit("101"));
+    expectError(() => validateLimit("101"), "INVALID_AMOUNT");
   });
 
   test("non-integer", () => {
-    expectValidationError(() => validateLimit("abc"));
+    expectError(() => validateLimit("abc"), "INVALID_AMOUNT");
   });
 });
 
@@ -168,38 +168,42 @@ describe("validateTokenAddress", () => {
   });
 
   test("missing 0x prefix", () => {
-    expectValidationError(() =>
-      validateTokenAddress("4200000000000000000000000000000000000006")
+    expectError(() =>
+      validateTokenAddress("4200000000000000000000000000000000000006"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("too short", () => {
-    expectValidationError(() => validateTokenAddress("0x1234"));
+    expectError(() => validateTokenAddress("0x1234"), "INVALID_ADDRESS");
   });
 
   test("too long", () => {
-    expectValidationError(() =>
-      validateTokenAddress("0x42000000000000000000000000000000000000060")
+    expectError(() =>
+      validateTokenAddress("0x42000000000000000000000000000000000000060"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("invalid chars", () => {
-    expectValidationError(() =>
-      validateTokenAddress("0xZZZZ000000000000000000000000000000000006")
+    expectError(() =>
+      validateTokenAddress("0xZZZZ000000000000000000000000000000000006"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("random text", () => {
-    expectValidationError(() => validateTokenAddress("not-an-address"));
+    expectError(() => validateTokenAddress("not-an-address"), "INVALID_ADDRESS");
   });
 
   test("bare 0x prefix", () => {
-    expectValidationError(() => validateTokenAddress("0x"));
+    expectError(() => validateTokenAddress("0x"), "INVALID_ADDRESS");
   });
 
   test("custom flag name in error", () => {
-    const out = expectValidationError(() =>
-      validateTokenAddress("bad", "--to")
+    const out = expectError(() =>
+      validateTokenAddress("bad", "--to"),
+      "INVALID_ADDRESS"
     );
     expect(out.error).toContain("--to");
   });
@@ -216,23 +220,23 @@ describe("validateSlippage", () => {
   });
 
   test("zero", () => {
-    expectValidationError(() => validateSlippage("0"));
+    expectError(() => validateSlippage("0"), "INVALID_SLIPPAGE");
   });
 
   test("negative", () => {
-    expectValidationError(() => validateSlippage("-1"));
+    expectError(() => validateSlippage("-1"), "INVALID_SLIPPAGE");
   });
 
   test("above 50", () => {
-    expectValidationError(() => validateSlippage("51"));
+    expectError(() => validateSlippage("51"), "INVALID_SLIPPAGE");
   });
 
   test("NaN", () => {
-    expectValidationError(() => validateSlippage("bad"));
+    expectError(() => validateSlippage("bad"), "INVALID_SLIPPAGE");
   });
 
   test("Infinity", () => {
-    expectValidationError(() => validateSlippage("Infinity"));
+    expectError(() => validateSlippage("Infinity"), "INVALID_SLIPPAGE");
   });
 
   test("small positive value", () => {
@@ -251,15 +255,15 @@ describe("validateChain", () => {
   });
 
   test("ethereum is invalid", () => {
-    expectValidationError(() => validateChain("ethereum"));
+    expectError(() => validateChain("ethereum"), "INVALID_CHAIN");
   });
 
   test("empty string is invalid", () => {
-    expectValidationError(() => validateChain(""));
+    expectError(() => validateChain(""), "INVALID_CHAIN");
   });
 
   test("uppercase BASE is invalid", () => {
-    expectValidationError(() => validateChain("BASE"));
+    expectError(() => validateChain("BASE"), "INVALID_CHAIN");
   });
 });
 
@@ -276,50 +280,58 @@ describe("validateSolanaAddress", () => {
   });
 
   test("too short (31 chars)", () => {
-    expectValidationError(() =>
-      validateSolanaAddress("1111111111111111111111111111111")
+    expectError(() =>
+      validateSolanaAddress("1111111111111111111111111111111"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("too long (45 chars)", () => {
-    expectValidationError(() =>
-      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1vX")
+    expectError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1vX"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("contains 0 (invalid base58)", () => {
-    expectValidationError(() =>
-      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G40EGGkZwyTDt1v")
+    expectError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G40EGGkZwyTDt1v"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("contains O (invalid base58)", () => {
-    expectValidationError(() =>
-      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4OEGGkZwyTDt1v")
+    expectError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4OEGGkZwyTDt1v"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("contains I (invalid base58)", () => {
-    expectValidationError(() =>
-      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4IEGGkZwyTDt1v")
+    expectError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4IEGGkZwyTDt1v"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("contains l (invalid base58)", () => {
-    expectValidationError(() =>
-      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4lEGGkZwyTDt1v")
+    expectError(() =>
+      validateSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4lEGGkZwyTDt1v"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("0x address rejected", () => {
-    expectValidationError(() =>
-      validateSolanaAddress("0x4200000000000000000000000000000000000006")
+    expectError(() =>
+      validateSolanaAddress("0x4200000000000000000000000000000000000006"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("custom flag name in error", () => {
-    const out = expectValidationError(() =>
-      validateSolanaAddress("bad", "--mint")
+    const out = expectError(() =>
+      validateSolanaAddress("bad", "--mint"),
+      "INVALID_ADDRESS"
     );
     expect(out.error).toContain("--mint");
   });
@@ -338,14 +350,16 @@ describe("validateAddress", () => {
   });
 
   test("rejects Solana address for base chain", () => {
-    expectValidationError(() =>
-      validateAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "base")
+    expectError(() =>
+      validateAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "base"),
+      "INVALID_ADDRESS"
     );
   });
 
   test("rejects 0x address for solana chain", () => {
-    expectValidationError(() =>
-      validateAddress("0x4200000000000000000000000000000000000006", "solana")
+    expectError(() =>
+      validateAddress("0x4200000000000000000000000000000000000006", "solana"),
+      "INVALID_ADDRESS"
     );
   });
 });

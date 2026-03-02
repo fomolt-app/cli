@@ -1,5 +1,5 @@
 import { test, expect, beforeEach, afterEach } from "bun:test";
-import { success, error } from "../src/output";
+import { success, successWithHint, error } from "../src/output";
 
 let stdout: string[] = [];
 let stderr: string[] = [];
@@ -45,4 +45,24 @@ test("error with extra fields", () => {
     code: "RATE_LIMITED",
     retryAfter: 45,
   });
+});
+
+test("successWithHint injects hintCLI when absent", () => {
+  successWithHint({ balance: "500" }, "Next: fomolt live portfolio");
+  const output = JSON.parse(stdout.join(""));
+  expect(output.ok).toBe(true);
+  expect(output.data.balance).toBe("500");
+  expect(output.data.hintCLI).toBe("Next: fomolt live portfolio");
+});
+
+test("successWithHint preserves existing hintCLI", () => {
+  successWithHint({ balance: "500", hintCLI: "API hint" }, "CLI hint");
+  const output = JSON.parse(stdout.join(""));
+  expect(output.data.hintCLI).toBe("API hint");
+});
+
+test("successWithHint handles null data", () => {
+  successWithHint(null, "some hint");
+  const output = JSON.parse(stdout.join(""));
+  expect(output).toEqual({ ok: true, data: null });
 });

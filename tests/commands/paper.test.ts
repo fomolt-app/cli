@@ -283,6 +283,36 @@ describe("paper Solana", () => {
   });
 });
 
+// --- hintCLI ---
+
+describe("hintCLI injection", () => {
+  test("paper trade injects hintCLI", async () => {
+    mockApiResponse({ trade: { side: "buy", totalUsdc: "500" } });
+
+    const { handlePaperTrade } = await import("../../src/commands/paper");
+    await handlePaperTrade(
+      { side: "buy", token: "0x68e4", chain: "base", usdc: "500" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Check portfolio: fomolt paper portfolio --chain base");
+  });
+
+  test("paper trade solana hint uses solana chain", async () => {
+    mockApiResponse({ trade: { side: "buy", totalSol: "1" } });
+
+    const { handlePaperTrade } = await import("../../src/commands/paper");
+    await handlePaperTrade(
+      { side: "buy", token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", chain: "solana", sol: "1" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Check portfolio: fomolt paper portfolio --chain solana");
+  });
+});
+
 // --- pnl-image Base-only ---
 
 describe("paper pnl-image", () => {

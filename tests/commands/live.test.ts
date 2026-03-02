@@ -584,6 +584,143 @@ describe("Base-only commands error on Solana", () => {
   });
 });
 
+// --- hintCLI injection ---
+
+describe("hintCLI injection", () => {
+  test("live trade injects hintCLI", async () => {
+    mockApiResponse({ trade: { id: "t1", side: "buy", status: "confirmed" } });
+
+    const { handleLiveTrade } = await import("../../src/commands/live");
+    await handleLiveTrade(
+      { side: "buy", token: "0x68e4", chain: "base", usdc: "100" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Check portfolio: fomolt live portfolio --chain base");
+  });
+
+  test("live quote injects hintCLI", async () => {
+    mockApiResponse({ side: "buy", quantity: "1000", totalUsdc: "50" });
+
+    const { handleLiveQuote } = await import("../../src/commands/live");
+    await handleLiveQuote(
+      { side: "buy", token: "0x68e4", chain: "base", usdc: "50" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Execute: fomolt live trade --chain base --side buy --token 0x68e4 --usdc 50");
+  });
+
+  test("live withdraw injects hintCLI", async () => {
+    mockApiResponse({ txHash: "0xabc", amount: "50" });
+
+    const { handleLiveWithdraw } = await import("../../src/commands/live");
+    await handleLiveWithdraw(
+      { chain: "base", currency: "USDC", amount: "50", to: "0xwallet" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Check balance: fomolt live balance --chain base");
+  });
+
+  test("live tokens injects hintCLI when results non-empty", async () => {
+    mockApiResponse({ tokens: [{ contractAddress: "0xabc", symbol: "TEST" }], count: 1 });
+
+    const { handleLiveTokens } = await import("../../src/commands/live");
+    await handleLiveTokens(
+      { chain: "base" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Get details: fomolt live token-info --chain base --address 0xabc");
+  });
+
+  test("live tokens no hintCLI when results empty", async () => {
+    mockApiResponse({ tokens: [], count: 0 });
+
+    const { handleLiveTokens } = await import("../../src/commands/live");
+    await handleLiveTokens(
+      { chain: "base" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBeUndefined();
+  });
+
+  test("live token-info injects hintCLI", async () => {
+    mockApiResponse({ symbol: "TEST", priceUsd: "0.05" });
+
+    const { handleLiveTokenInfo } = await import("../../src/commands/live");
+    await handleLiveTokenInfo(
+      { address: "0x68e4", chain: "base" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Get a quote: fomolt live quote --chain base --side buy --token 0x68e4 --usdc 10");
+  });
+
+  test("API-provided hintCLI is not overridden", async () => {
+    mockApiResponse({ trade: { id: "t1" }, hintCLI: "API says this" });
+
+    const { handleLiveTrade } = await import("../../src/commands/live");
+    await handleLiveTrade(
+      { side: "buy", token: "0x68e4", chain: "base", usdc: "100" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("API says this");
+  });
+
+  test("live bridge quote injects hintCLI", async () => {
+    mockApiResponse({ estimatedOutput: "1.5" });
+
+    const { handleLiveBridgeQuote } = await import("../../src/commands/live");
+    await handleLiveBridgeQuote(
+      { direction: "base_to_solana", amount: "50" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Execute: fomolt live bridge execute --direction base_to_solana --amount 50");
+  });
+
+  test("live bridge execute injects hintCLI", async () => {
+    mockApiResponse({ txHash: "0xdef" });
+
+    const { handleLiveBridge } = await import("../../src/commands/live");
+    await handleLiveBridge(
+      { direction: "base_to_solana", amount: "50" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Check balances: fomolt live balance --chain base && fomolt live balance --chain solana");
+  });
+});
+
+// --- Error codes ---
+
+describe("specific error codes", () => {
+  test("requireBase uses INVALID_CHAIN", async () => {
+    const { requireBase } = await import("../../src/commands/live");
+    try {
+      requireBase("solana", "session-key");
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    const out = JSON.parse(stderr.join(""));
+    expect(out.code).toBe("INVALID_CHAIN");
+  });
+});
+
 // --- Validators ---
 
 describe("validateSort and validateOrder", () => {
@@ -607,6 +744,7 @@ describe("validateSort and validateOrder", () => {
     expect(exitCode).toBe(1);
     const out = JSON.parse(stderr.join(""));
     expect(out.error).toContain("--sort");
+    expect(out.code).toBe("INVALID_SORT");
   });
 
   test("validateOrder accepts asc and desc", async () => {
@@ -626,5 +764,6 @@ describe("validateSort and validateOrder", () => {
     expect(exitCode).toBe(1);
     const out = JSON.parse(stderr.join(""));
     expect(out.error).toContain("--order");
+    expect(out.code).toBe("INVALID_ORDER");
   });
 });

@@ -16,13 +16,31 @@ import { copyCommands } from "./src/commands/copy";
 import { skillCommand } from "./src/commands/skill";
 import { twitterCommands } from "./src/commands/twitter";
 
+const commanderErrorOutput = {
+  writeErr: (str: string) => {
+    // Strip Commander's "error: " prefix for our JSON output
+    const msg = str.trim().replace(/^error:\s*/i, "");
+    if (msg.includes("too many arguments")) {
+      const base = msg.replace(/\.?\s*$/, "");
+      error(
+        `${base}. A bare value like "10" needs a flag before it (e.g. --usdc 10, --sol 0.1, --quantity 500)`,
+        "INVALID_ARGS"
+      );
+    } else {
+      error(msg, "INVALID_ARGS");
+    }
+  },
+  writeOut: (str: string) => process.stdout.write(str),
+};
+
 const program = new Command("fomolt")
   .version("2.2.0")
   .description("Fomolt CLI — agentic trading on Base & Solana")
   .option("--api-url <url>", "Override API base URL")
   .option("--api-key <key>", "Override stored API key (use - to read from stdin)")
   .option("--agent <name>", "Use a specific stored agent instead of the active one")
-  .addHelpText("after", "\nRun `fomolt skill` to download the full agent reference (SKILL.md).");
+  .addHelpText("after", "\nRun `fomolt skill` to download the full agent reference (SKILL.md).")
+  .configureOutput(commanderErrorOutput);
 
 async function showStatus() {
   const store = await loadCredentialsStore();
@@ -113,21 +131,33 @@ async function main() {
     await showStatus();
   });
 
-  program.addCommand(authCommands(getContext));
-  program.addCommand(paperCommands(getContext));
-  program.addCommand(liveCommands(getContext));
-  program.addCommand(watchCommands(getContext));
-  program.addCommand(configCommands());
-  program.addCommand(achievementsCommand(getContext));
-  program.addCommand(leaderboardCommand(getContext));
-  program.addCommand(feedCommand(getContext));
-  program.addCommand(specCommand(getContext));
-  program.addCommand(ohlcvCommand(getContext));
-  program.addCommand(agentCommands(getContext));
-  program.addCommand(copyCommands(getContext));
-  program.addCommand(twitterCommands(getContext));
-  program.addCommand(updateCommands());
-  program.addCommand(skillCommand());
+  for (const cmd of [
+    authCommands(getContext),
+    paperCommands(getContext),
+    liveCommands(getContext),
+    watchCommands(getContext),
+    configCommands(),
+    achievementsCommand(getContext),
+    leaderboardCommand(getContext),
+    feedCommand(getContext),
+    specCommand(getContext),
+    ohlcvCommand(getContext),
+    agentCommands(getContext),
+    copyCommands(getContext),
+    twitterCommands(getContext),
+    updateCommands(),
+    skillCommand(),
+  ]) {
+    // Commander's addCommand() doesn't inherit configureOutput, so apply manually
+    cmd.configureOutput(commanderErrorOutput);
+    for (const sub of cmd.commands) {
+      sub.configureOutput(commanderErrorOutput);
+      for (const subsub of sub.commands) {
+        subsub.configureOutput(commanderErrorOutput);
+      }
+    }
+    program.addCommand(cmd);
+  }
 
   try {
     await program.parseAsync(process.argv);
