@@ -8,6 +8,13 @@ export function success(data: unknown): void {
   }
 }
 
+export function successWithHint(data: unknown, hint: string): void {
+  if (data && typeof data === "object" && !("hintCLI" in data)) {
+    (data as Record<string, unknown>).hintCLI = hint;
+  }
+  success(data);
+}
+
 export function error(
   message: string,
   code: string,

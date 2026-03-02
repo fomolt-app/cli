@@ -38,7 +38,20 @@ Always check `ok` first. On success, read `data`. On error, read `code` to decid
 | Code | Meaning | What to Do |
 |------|---------|------------|
 | `NO_CREDENTIALS` | No API key configured | Run `fomolt auth register` or `fomolt auth import` |
-| `VALIDATION_ERROR` | Bad or missing flags | Fix the command arguments |
+| `INVALID_CHAIN` | `--chain` not "base" or "solana" | Use `--chain base` or `--chain solana` |
+| `INVALID_ADDRESS` | Address format wrong for chain | Base: `0x` + 40 hex chars. Solana: 32-44 base58 chars |
+| `INVALID_AMOUNT` | Numeric value out of range | Check the flag range in the error message |
+| `INVALID_SLIPPAGE` | `--slippage` not 0-50 | Use a value like `5` (percent) |
+| `INVALID_DIRECTION` | Bridge direction invalid | Use `base_to_solana` or `solana_to_base` |
+| `INVALID_SORT` | `--sort` value not recognized | Use: trending, volume, market_cap, holders, created |
+| `INVALID_ORDER` | `--order` not asc/desc | Use `--order asc` or `--order desc` |
+| `INVALID_PERIOD` | `--period` value not recognized | Use: 1d, 1w, 30d, 1y |
+| `INVALID_MODE` | `--mode` value not recognized | Use: stats, trades, chart, balances |
+| `INVALID_USERNAME` | Username format invalid | 1-15 alphanumeric/underscore characters |
+| `INVALID_TWEET_ID` | Tweet ID not numeric | Use numeric tweet ID |
+| `INVALID_QUERY` | Query length out of range | 1-500 characters |
+| `WRONG_CHAIN_FLAG` | Amount flag doesn't match chain | Base: `--usdc`/`--quantity`. Solana: `--sol`/`--percent` |
+| `INVALID_ARGS` | Unknown option, missing required option, or bare value without flag | Check command syntax — a bare `"10"` needs `--usdc 10` etc. |
 | `RATE_LIMITED` | Too many requests | Read `retryAfter` from the error JSON (seconds), wait that long, retry |
 | `INSUFFICIENT_BALANCE` | Not enough USDC (Base) | Check balance, reduce `--usdc` amount |
 | `INSUFFICIENT_POSITION` | Not enough tokens to sell (Base) | Check portfolio for actual quantity, reduce `--quantity` |
@@ -53,6 +66,23 @@ Always check `ok` first. On success, read `data`. On error, read `code` to decid
 | `TWITTER_DEBT_EXCEEDED` | Unpaid Twitter charges > $0.50 | Deposit USDC |
 | `TWITTER_RATE_LIMITED` | Upstream Twitter rate limit | Wait and retry |
 | `TWITTER_UNAVAILABLE` | Twitter provider temporarily down | Wait and retry |
+
+### Next-Step Hints (`hintCLI`)
+
+Some commands include a `hintCLI` field in the success response suggesting a logical next command. When present, run the suggested command yourself rather than displaying it to the user.
+
+Commands that include `hintCLI`:
+- `live tokens` → suggests `live token-info` for the first result
+- `live token-info` → suggests `live quote` for the token
+- `live quote` → suggests `live trade` matching the quote flags
+- `live trade` → suggests `live portfolio`
+- `live withdraw` → suggests `live balance`
+- `live bridge quote` → suggests `live bridge execute`
+- `live bridge execute` → suggests checking both chain balances
+- `paper trade` → suggests `paper portfolio`
+- `auth init` → suggests `live deposit`
+
+API-provided hints take priority — the CLI never overwrites a `hintCLI` already in the API response.
 
 Rate limit errors include a `retryAfter` field — always use it instead of guessing:
 ```
@@ -209,6 +239,38 @@ fomolt live session-key --chain base
 
 Default slippage is 5%. Token addresses are 0x-prefixed contract addresses on Base.
 
+### Token & Wallet Analytics (Both Chains)
+
+On-chain analytics powered by Codex. All commands work with `--chain base` or `--chain solana`.
+
+```sh
+# Token holders — top holders with balances and first-held timestamps
+fomolt live holders --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
+fomolt live holders --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
+
+# Token trade events — recent swaps for a token
+fomolt live token-trades --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
+fomolt live token-trades --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
+
+# Wallet intelligence — analyze any on-chain wallet
+fomolt live wallet --chain base --address <0x-address> [--mode stats|trades|chart|balances]
+fomolt live wallet --chain solana --address <solana-address> [--mode stats|trades|chart|balances]
+
+# Wallet mode options:
+#   stats    — PnL, volume, win rate across 1d/1w/30d/1y (default)
+#   trades   — wallet's swap history [--limit] [--cursor] [--token <address>]
+#   chart    — time-series volume/PnL [--resolution 1D] [--start <unix>] [--end <unix>]
+#   balances — token holdings with USD values [--limit] [--cursor]
+
+# Top wallets — discover profitable wallets on a chain
+fomolt live top-wallets --chain base [--sort pnl|volume|win-rate] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+
+# Token wallets — find top wallets trading a specific token
+fomolt live token-wallets --chain base --address <0x-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+```
+
+Defaults: `--sort pnl`, `--period 30d`, `--limit 20` (top-wallets/token-wallets), `--limit 25` (holders/token-trades), `--mode stats` (wallet).
+
 ### Live Trading — Solana (SOL)
 
 Real on-chain swaps on Solana via Trade Router. Users pay their own gas in SOL. Max 10 SOL per buy trade.
@@ -217,7 +279,7 @@ Real on-chain swaps on Solana via Trade Router. Users pay their own gas in SOL. 
 # Discover tokens (with screening filters)
 fomolt live tokens --chain solana [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
 
-# Get detailed token info (Helius-enriched: metadata, price, holders, security)
+# Get detailed token info (metadata, price, holders, security)
 fomolt live token-info --chain solana --address <mint-address>
 
 # Check a token's live price
@@ -253,7 +315,7 @@ fomolt live performance --chain solana
 
 Default slippage is 10% (Solana tokens are highly volatile). Token addresses are Solana mint addresses (32-44 base58 characters).
 
-**Note:** `session-key` is a Base-only command. Using `--chain solana` with it produces a `VALIDATION_ERROR`.
+**Note:** `session-key` is a Base-only command. Using `--chain solana` with it produces an `INVALID_CHAIN` error.
 
 ### Bridge (Base ↔ Solana)
 
@@ -460,7 +522,7 @@ Follow this order when deciding what to do:
 - **Base tokens**: Start with `0x`, 42 hex characters (e.g., `0x68e4...`)
 - **Solana tokens**: Base58 encoded, 32-44 characters (e.g., `EPjFWdd5Aufq...`)
 
-Use `--chain base` for Base tokens and `--chain solana` for Solana tokens. The CLI validates the address format per chain. If you use the wrong format, you'll get a `VALIDATION_ERROR`.
+Use `--chain base` for Base tokens and `--chain solana` for Solana tokens. The CLI validates the address format per chain. If you use the wrong format, you'll get an `INVALID_ADDRESS` error.
 
 ### When to Quote First
 
@@ -573,7 +635,7 @@ fomolt copy top_trader_name --market paper --max-usdc 100
 - HTTP timeout: 30 seconds per request
 - Base-only commands: `session-key` (error on `--chain solana`)
 
-All numeric and address flags are validated client-side. Invalid values produce a `VALIDATION_ERROR` with exit code 1.
+All numeric and address flags are validated client-side. Invalid values produce a specific error code (e.g. `INVALID_AMOUNT`, `INVALID_ADDRESS`, `WRONG_CHAIN_FLAG`) with exit code 1.
 
 ## Commands That Don't Require Auth
 
@@ -583,6 +645,6 @@ Everything else requires auth.
 
 ## Idempotency
 
-**Safe to retry (read-only):** `price`, `portfolio`, `balance`, `tokens`, `token-info`, `quote`, `trades`, `performance`, `feed`, `ohlcv`, `me`, `achievements`, `leaderboard`, `twitter search`, `twitter user`, `twitter tweets`, `twitter tweet`, `twitter trends`, `twitter thread`, `twitter quotes`, `twitter replies`, `twitter user-search`, `twitter followers`, `twitter following`, `twitter mentions`, `twitter usage`
+**Safe to retry (read-only):** `price`, `portfolio`, `balance`, `tokens`, `token-info`, `quote`, `trades`, `performance`, `holders`, `token-trades`, `wallet`, `top-wallets`, `token-wallets`, `feed`, `ohlcv`, `me`, `achievements`, `leaderboard`, `twitter search`, `twitter user`, `twitter tweets`, `twitter tweet`, `twitter trends`, `twitter thread`, `twitter quotes`, `twitter replies`, `twitter user-search`, `twitter followers`, `twitter following`, `twitter mentions`, `twitter usage`
 
 **NOT safe to retry blindly:** `trade` (executes another trade), `withdraw` (sends funds again). If a trade command fails, check `live trades --chain base --sort desc --limit 1` to see if it actually went through before retrying.

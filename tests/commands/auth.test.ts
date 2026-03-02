@@ -252,6 +252,33 @@ test("auth remove deletes agent from store", async () => {
   expect(Object.keys(store!.agents)).toEqual(["beta"]);
 });
 
+test("auth init injects hintCLI", async () => {
+  globalThis.fetch = mock(() =>
+    Promise.resolve(
+      new Response(
+        JSON.stringify({
+          success: true,
+          response: { registered: true },
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": "r5",
+          },
+        }
+      )
+    )
+  ) as any;
+
+  const { handleInit } = await import("../../src/commands/auth");
+  await handleInit({ apiUrl: "https://fomolt.test", apiKey: "k" });
+
+  const output = JSON.parse(stdout.join(""));
+  expect(output.ok).toBe(true);
+  expect(output.data.hintCLI).toBe("Deposit USDC: fomolt live deposit --chain base");
+});
+
 test("auth import twice stores both agents", async () => {
   let callCount = 0;
   globalThis.fetch = mock(() => {

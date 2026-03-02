@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { success, error } from "../output";
+import { success, successWithHint, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
 import { validateTokenAddress, validatePositiveNumber, validateLimit, validateChain, validateAddress, type Chain } from "../validate";
 
@@ -33,7 +33,7 @@ export async function handlePaperTrade(
   if (opts.chain === "base" && opts.quantity) body.quantity = opts.quantity;
   if (opts.note) body.note = opts.note;
   const data = await client.post(`/agent/paper/${prefix}/trade`, body);
-  success(data);
+  successWithHint(data, `Check portfolio: fomolt paper portfolio --chain ${opts.chain}`);
 }
 
 export async function handlePaperPortfolio(
@@ -103,7 +103,7 @@ export function paperCommands(getContext: () => CmdContext): Command {
 
   cmd
     .command("trade")
-    .description("Buy or sell a token")
+    .description("Buy or sell a token. Base buys: --usdc. Base sells: --quantity. Solana buys: --sol. Solana sells: --percent (0.01-100)")
     .requiredOption("--chain <chain>", "Chain: base or solana")
     .requiredOption("--side <side>", "buy or sell")
     .requiredOption("--token <address>", "Token address")
@@ -116,19 +116,19 @@ export function paperCommands(getContext: () => CmdContext): Command {
       const chain = validateChain(opts.chain);
       validateAddress(opts.token, chain);
       if (chain === "base" && opts.sol) {
-        error("Use --usdc for Base buys", "VALIDATION_ERROR");
+        error("Use --usdc for Base buys, --sol is for Solana", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (chain === "solana" && opts.usdc) {
-        error("Use --sol for Solana buys", "VALIDATION_ERROR");
+        error("Use --sol for Solana buys, --usdc is for Base", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (chain === "solana" && opts.quantity) {
-        error("Use --percent for Solana sells (0.01-100)", "VALIDATION_ERROR");
+        error("Use --percent for Solana sells (0.01-100), --quantity is for Base only", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (chain === "base" && opts.percent) {
-        error("Use --quantity for Base sells", "VALIDATION_ERROR");
+        error("Use --quantity for Base sells, --percent is for Solana only", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
       if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
@@ -137,7 +137,7 @@ export function paperCommands(getContext: () => CmdContext): Command {
       if (opts.percent) {
         const pct = Number(opts.percent);
         if (isNaN(pct) || pct < 0.01 || pct > 100) {
-          error("--percent must be between 0.01 and 100", "VALIDATION_ERROR");
+          error("--percent must be between 0.01 and 100", "INVALID_AMOUNT");
           process.exit(1);
         }
       }
@@ -201,7 +201,7 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       if (chain !== "base") {
-        error("pnl-image is only available on Base", "VALIDATION_ERROR");
+        error("pnl-image is only available on Base", "INVALID_CHAIN");
         process.exit(1);
       }
       return handlePaperPnlImage({ token: validateTokenAddress(opts.token) }, getContext());

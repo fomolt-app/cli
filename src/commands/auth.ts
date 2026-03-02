@@ -8,7 +8,7 @@ import {
   listAgents,
   type Credentials,
 } from "../config";
-import { success, error } from "../output";
+import { success, successWithHint, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
 
 export async function handleRegister(
@@ -82,7 +82,7 @@ export async function handleImport(
 export async function handleInit(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
   const data = await client.post("/agent/init");
-  success(data);
+  successWithHint(data, "Deposit USDC: fomolt live deposit --chain base");
 }
 
 export async function handleMe(ctx: CmdContext): Promise<void> {

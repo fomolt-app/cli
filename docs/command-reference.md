@@ -281,7 +281,7 @@ All filter and sort flags work on both Base and Solana.
 
 ### `live token-info`
 
-Get a detailed token overview including price, market cap, volume, and holder count. On Solana, returns Helius-enriched data: metadata, price, market cap, top holders, supply, authorities, security flags, and token phase.
+Get a detailed token overview including price, market cap, volume, and holder count. Returns metadata, price, market cap, top holders, supply, security flags, and more.
 
 ```sh
 fomolt live token-info --address <address>
@@ -290,6 +290,84 @@ fomolt live token-info --address <address>
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--address <address>` | yes | Token contract address (Base) or mint address (Solana) |
+
+### `live holders`
+
+Get top token holders with balances and first-held timestamps.
+
+```sh
+fomolt live holders --address <address> [--limit <n>] [--cursor <cursor>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--limit <n>` | no | 25 | Max results (1-100) |
+| `--cursor <cursor>` | no | — | Pagination cursor from previous response |
+
+### `live token-trades`
+
+Get recent trade events (swaps) for a token.
+
+```sh
+fomolt live token-trades --address <address> [--limit <n>] [--cursor <cursor>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--limit <n>` | no | 25 | Max results (1-100) |
+| `--cursor <cursor>` | no | — | Pagination cursor from previous response |
+
+### `live wallet`
+
+Analyze any on-chain wallet: stats, trades, chart, or balances.
+
+```sh
+fomolt live wallet --address <address> [--mode stats|trades|chart|balances]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--address <address>` | yes | — | Wallet address |
+| `--mode <mode>` | no | stats | `stats`, `trades`, `chart`, or `balances` |
+| `--limit <n>` | no | 25 | Max results (trades/balances mode) |
+| `--cursor <cursor>` | no | — | Pagination cursor (trades/balances mode) |
+| `--token <address>` | no | — | Filter by token (trades mode) |
+| `--resolution <res>` | no | 1D | Chart resolution, e.g. `1D`, `1H` (chart mode) |
+| `--start <unix>` | no | — | Chart start timestamp (chart mode) |
+| `--end <unix>` | no | — | Chart end timestamp (chart mode) |
+
+### `live top-wallets`
+
+Discover top-performing wallets on a chain.
+
+```sh
+fomolt live top-wallets [--sort pnl|volume|win-rate] [--period 1d|1w|30d|1y] [--limit <n>] [--offset <n>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--sort <field>` | no | pnl | Sort by `pnl`, `volume`, or `win-rate` |
+| `--period <period>` | no | 30d | Time period: `1d`, `1w`, `30d`, `1y` |
+| `--limit <n>` | no | 20 | Max results (1-100) |
+| `--offset <n>` | no | 0 | Offset for pagination |
+
+### `live token-wallets`
+
+Discover wallets trading a specific token, ranked by performance.
+
+```sh
+fomolt live token-wallets --address <address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <n>] [--offset <n>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--sort <field>` | no | pnl | Sort by `pnl` or `volume` |
+| `--period <period>` | no | 30d | Time period: `1d`, `1w`, `30d`, `1y` |
+| `--limit <n>` | no | 20 | Max results (1-100) |
+| `--offset <n>` | no | 0 | Offset for pagination |
 
 ### `live balance`
 
