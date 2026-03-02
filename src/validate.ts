@@ -187,3 +187,39 @@ export function validateQuery(value: string): string {
   }
   return value;
 }
+
+const VALID_SPARKLINE_RESOLUTIONS = ["1S", "5S", "15S", "30S", "1", "5", "15", "30", "60", "240", "720", "1D", "7D"] as const;
+export type SparklineResolution = (typeof VALID_SPARKLINE_RESOLUTIONS)[number];
+
+export function validateSparklineResolution(value: string): SparklineResolution {
+  if (!VALID_SPARKLINE_RESOLUTIONS.includes(value as SparklineResolution)) {
+    error(`--resolution must be one of ${VALID_SPARKLINE_RESOLUTIONS.join(", ")}, got "${value}"`, "INVALID_ARGS");
+    process.exit(1);
+  }
+  return value as SparklineResolution;
+}
+
+const VALID_PAIR_STATS_DURATIONS = ["5m", "15m", "1h", "4h", "12h", "1d", "1w", "30d"] as const;
+export type PairStatsDuration = (typeof VALID_PAIR_STATS_DURATIONS)[number];
+
+export function validatePairStatsDurations(value: string): PairStatsDuration[] {
+  const parts = value.split(",") as PairStatsDuration[];
+  for (const d of parts) {
+    if (!VALID_PAIR_STATS_DURATIONS.includes(d)) {
+      error(`--durations must be comma-separated values from: ${VALID_PAIR_STATS_DURATIONS.join(", ")}, got "${d}"`, "INVALID_ARGS");
+      process.exit(1);
+    }
+  }
+  return parts;
+}
+
+const VALID_PROPOSAL_TYPES = ["SCAM", "LOGO", "ATTRIBUTE"] as const;
+export type ProposalType = (typeof VALID_PROPOSAL_TYPES)[number];
+
+export function validateProposalType(value: string): ProposalType {
+  if (!VALID_PROPOSAL_TYPES.includes(value as ProposalType)) {
+    error(`--proposal-type must be one of ${VALID_PROPOSAL_TYPES.join(", ")}, got "${value}"`, "INVALID_ARGS");
+    process.exit(1);
+  }
+  return value as ProposalType;
+}
