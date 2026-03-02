@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { success, successWithHint, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-import { validatePositiveNumber, validateLimit, validateSlippage, validateChain, validateAddress, type Chain } from "../validate";
+import { validatePositiveNumber, validateLimit, validateSlippage, validateChain, validateSide, validateAddress, type Chain } from "../validate";
 
 export function requireBase(chain: Chain, command: string): void {
   if (chain !== "base") {
@@ -404,8 +404,14 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("quote")
     .description("Get a swap quote without executing. Base buys: --usdc. Solana buys: --sol. Sells: --quantity (Base) or --percent (Solana)")
-    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
-    .requiredOption("-s, --side <side>", "buy or sell")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana", (val, prev) => {
+      if (prev !== undefined) { error("--chain specified multiple times", "INVALID_ARGS"); process.exit(1); }
+      return val;
+    })
+    .requiredOption("-s, --side <side>", "buy or sell", (val, prev) => {
+      if (prev !== undefined) { error("--side specified multiple times", "INVALID_ARGS"); process.exit(1); }
+      return val;
+    })
     .requiredOption("-t, --token <address>", "Token address")
     .option("--usdc <amount>", "USDC to spend (Base buy orders)")
     .option("--sol <amount>", "SOL to spend (Solana buy orders)")
@@ -413,6 +419,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .option("--slippage <pct>", "Slippage tolerance %")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
+      validateSide(opts.side);
       validateAddress(opts.token, chain);
       if (chain === "base" && opts.sol) {
         error("Use --usdc for Base buys, --sol is for Solana", "WRONG_CHAIN_FLAG");
@@ -432,8 +439,14 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("trade")
     .description("Execute an on-chain token swap. Base buys: --usdc. Base sells: --quantity. Solana buys: --sol. Solana sells: --percent")
-    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
-    .requiredOption("-s, --side <side>", "buy or sell")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana", (val, prev) => {
+      if (prev !== undefined) { error("--chain specified multiple times", "INVALID_ARGS"); process.exit(1); }
+      return val;
+    })
+    .requiredOption("-s, --side <side>", "buy or sell", (val, prev) => {
+      if (prev !== undefined) { error("--side specified multiple times", "INVALID_ARGS"); process.exit(1); }
+      return val;
+    })
     .requiredOption("-t, --token <address>", "Token address")
     .option("--usdc <amount>", "USDC to spend (Base buy orders)")
     .option("--sol <amount>", "SOL to spend (Solana buy orders)")
@@ -444,6 +457,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .addHelpText("after", "\nExamples:\n  fomolt live trade -c solana -s buy -t <mint> --sol 0.1\n  fomolt live trade -c base -s sell -t <address> --quantity 1000")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
+      validateSide(opts.side);
       validateAddress(opts.token, chain);
       if (chain === "base" && opts.sol) {
         error("Use --usdc for Base buys, --sol is for Solana", "WRONG_CHAIN_FLAG");

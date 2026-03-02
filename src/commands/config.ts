@@ -1,16 +1,29 @@
 import { Command } from "commander";
-import { loadConfig, saveConfig } from "../config";
-import { success } from "../output";
+import { loadConfig, saveConfig, validateConfigValue, deleteConfigKey } from "../config";
+import { success, error } from "../output";
 
 export async function handleConfigSet(
   key: string,
   value: string,
   configDir?: string
 ): Promise<void> {
+  const err = validateConfigValue(key, value);
+  if (err) {
+    error(err, "INVALID_CONFIG");
+    process.exit(1);
+  }
   const config = await loadConfig(configDir);
   config[key] = value;
   await saveConfig(config, configDir);
   success({ key, value });
+}
+
+export async function handleConfigReset(
+  key: string,
+  configDir?: string
+): Promise<void> {
+  await deleteConfigKey(key, configDir);
+  success({ key, value: null, message: `Reset "${key}" to default` });
 }
 
 export async function handleConfigGet(
@@ -43,6 +56,11 @@ export function configCommands(): Command {
     .command("list")
     .description("List all config values")
     .action(() => handleConfigList());
+
+  cmd
+    .command("reset <key>")
+    .description("Reset a config value to its default")
+    .action(async (key: string) => handleConfigReset(key));
 
   return cmd;
 }

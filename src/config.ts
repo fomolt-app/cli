@@ -159,6 +159,31 @@ export async function listAgents(dir = DEFAULT_DIR): Promise<AgentInfo[]> {
   }));
 }
 
+const KNOWN_CONFIG_KEYS = new Set(["apiUrl"]);
+
+export function validateConfigValue(key: string, value: string): string | null {
+  if (!KNOWN_CONFIG_KEYS.has(key)) {
+    return `Unknown config key "${key}". Valid keys: ${[...KNOWN_CONFIG_KEYS].join(", ")}`;
+  }
+  if (key === "apiUrl") {
+    try {
+      const url = new URL(value);
+      if (url.protocol !== "https:" && url.protocol !== "http:") {
+        return "apiUrl must be an HTTP(S) URL";
+      }
+    } catch {
+      return `apiUrl must be a valid URL, got "${value}"`;
+    }
+  }
+  return null;
+}
+
+export async function deleteConfigKey(key: string, dir = DEFAULT_DIR): Promise<void> {
+  const config = await loadConfig(dir);
+  delete config[key];
+  await saveConfig(config, dir);
+}
+
 export async function loadConfig(dir = DEFAULT_DIR): Promise<Config> {
   const path = join(dir, "config.json");
   const file = Bun.file(path);

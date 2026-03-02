@@ -92,12 +92,12 @@ async function showStatus() {
     console.log("  fomolt achievements                   fomolt --help");
     console.log("  fomolt agent profile <name>           fomolt copy <name>");
     console.log("");
-    console.log("  Managed Sessions                     Twitter Data");
-    console.log("  ────────────────                     ────────────");
-    console.log("  fomolt session create --duration 60   fomolt twitter search --query '...'");
-    console.log("  fomolt session start --id <id>        fomolt twitter user <name>");
-    console.log("  fomolt session events --id <id>       fomolt twitter tweets <name>");
-    console.log("  fomolt session kill --id <id>         fomolt twitter usage");
+    console.log("  Twitter Data");
+    console.log("  ────────────");
+    console.log("  fomolt twitter search --query '...'");
+    console.log("  fomolt twitter user <name>");
+    console.log("  fomolt twitter tweets <name>");
+    console.log("  fomolt twitter usage");
     console.log("");
     console.log("  Docs:  fomolt skill              (saves full CLI reference)");
   } else {
@@ -143,7 +143,7 @@ async function main() {
     await showStatus();
   });
 
-  for (const cmd of [
+  const visibleCommands = [
     authCommands(getContext),
     paperCommands(getContext),
     liveCommands(getContext),
@@ -158,14 +158,17 @@ async function main() {
     ohlcvCommand(getContext),
     agentCommands(getContext),
     copyCommands(getContext),
-    sessionCommands(getContext),
     twitterCommands(getContext),
     updateCommands(),
     skillCommand(),
     buyCommand(getContext),
     sellCommand(getContext),
-  ]) {
-    // Commander's addCommand() doesn't inherit configureOutput, so apply manually
+  ];
+  const hiddenCommands = [
+    sessionCommands(getContext),
+  ];
+
+  const applyOutputConfig = (cmd: Command) => {
     cmd.configureOutput(commanderErrorOutput);
     for (const sub of cmd.commands) {
       sub.configureOutput(commanderErrorOutput);
@@ -173,7 +176,15 @@ async function main() {
         subsub.configureOutput(commanderErrorOutput);
       }
     }
+  };
+
+  for (const cmd of visibleCommands) {
+    applyOutputConfig(cmd);
     program.addCommand(cmd);
+  }
+  for (const cmd of hiddenCommands) {
+    applyOutputConfig(cmd);
+    program.addCommand(cmd, { hidden: true });
   }
 
   try {
