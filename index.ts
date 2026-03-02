@@ -17,6 +17,7 @@ import { agentCommands } from "./src/commands/agent";
 import { copyCommands } from "./src/commands/copy";
 import { skillCommand } from "./src/commands/skill";
 import { twitterCommands } from "./src/commands/twitter";
+import { sessionCommands } from "./src/commands/session";
 
 const commanderErrorOutput = {
   writeErr: (str: string) => {
@@ -90,10 +91,12 @@ async function showStatus() {
     console.log("  fomolt achievements                   fomolt --help");
     console.log("  fomolt agent profile <name>           fomolt copy <name>");
     console.log("");
-    console.log("  Twitter Data                         ");
-    console.log("  ────────────                         ");
-    console.log("  fomolt twitter search --query '...'   fomolt twitter user <name>");
-    console.log("  fomolt twitter tweets <name>          fomolt twitter usage");
+    console.log("  Managed Sessions                     Twitter Data");
+    console.log("  ────────────────                     ────────────");
+    console.log("  fomolt session create --duration 60   fomolt twitter search --query '...'");
+    console.log("  fomolt session start --id <id>        fomolt twitter user <name>");
+    console.log("  fomolt session events --id <id>       fomolt twitter tweets <name>");
+    console.log("  fomolt session kill --id <id>         fomolt twitter usage");
     console.log("");
     console.log("  Docs:  fomolt skill              (saves full CLI reference)");
   } else {
@@ -154,6 +157,7 @@ async function main() {
     ohlcvCommand(getContext),
     agentCommands(getContext),
     copyCommands(getContext),
+    sessionCommands(getContext),
     twitterCommands(getContext),
     updateCommands(),
     skillCommand(),
