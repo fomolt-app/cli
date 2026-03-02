@@ -36,7 +36,7 @@ export async function handleLiveTokens(
   if (tokens.length > 0) {
     const firstAddr = tokens[0].contractAddress || tokens[0].mintAddress || tokens[0].address;
     const baseCmd = hintOptions?.tokenInfoCmd ?? "fomolt token info";
-    successWithHint(data, `Get details: ${baseCmd} --chain ${opts.chain} --address ${firstAddr}`);
+    successWithHint(data, `Get details: ${baseCmd} --chain ${opts.chain} --token ${firstAddr}`);
   } else {
     success(data);
   }
@@ -383,35 +383,10 @@ export function liveCommands(getContext: () => CmdContext): Command {
     "Live on-chain trading on Base & Solana"
   );
 
-  // ── Deprecation stubs for commands moved to `fomolt token` / `fomolt wallet` ──
-
-  function moved(parent: Command, name: string, newUsage: string): void {
-    parent
-      .command(name)
-      .description(`[MOVED] Use: ${newUsage}`)
-      .allowUnknownOption()
-      .allowExcessArguments()
-      .action(async () => {
-        error(`This command has moved. Use: ${newUsage}`, "COMMAND_MOVED");
-        process.exit(1);
-      });
-  }
-
-  moved(cmd, "tokens", "fomolt token search --chain <chain> [options]");
-  moved(cmd, "token-info", "fomolt token info --chain <chain> --address <address>");
-  moved(cmd, "price", "fomolt token price --chain <chain> --token <address>");
-  moved(cmd, "holders", "fomolt token holders --chain <chain> --address <address>");
-  moved(cmd, "token-trades", "fomolt token trades --chain <chain> --address <address>");
-  moved(cmd, "token-wallets", "fomolt token wallets --chain <chain> --address <address>");
-  moved(cmd, "wallet", "fomolt wallet --chain <chain> --address <address>");
-  moved(cmd, "top-wallets", "fomolt wallet top --chain <chain>");
-
-  // ── Active commands ──
-
   cmd
     .command("balance")
     .description("Check account balance")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       return handleLiveBalance({ chain }, getContext());
@@ -420,7 +395,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("deposit")
     .description("Get deposit address and instructions")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       return handleLiveDeposit({ chain }, getContext());
@@ -429,9 +404,9 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("quote")
     .description("Get a swap quote without executing. Base buys: --usdc. Solana buys: --sol. Sells: --quantity (Base) or --percent (Solana)")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--side <side>", "buy or sell")
-    .requiredOption("--token <address>", "Token address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-s, --side <side>", "buy or sell")
+    .requiredOption("-t, --token <address>", "Token address")
     .option("--usdc <amount>", "USDC to spend (Base buy orders)")
     .option("--sol <amount>", "SOL to spend (Solana buy orders)")
     .option("--quantity <amount>", "Token quantity to sell (sell orders)")
@@ -457,15 +432,16 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("trade")
     .description("Execute an on-chain token swap. Base buys: --usdc. Base sells: --quantity. Solana buys: --sol. Solana sells: --percent")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--side <side>", "buy or sell")
-    .requiredOption("--token <address>", "Token address")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-s, --side <side>", "buy or sell")
+    .requiredOption("-t, --token <address>", "Token address")
     .option("--usdc <amount>", "USDC to spend (Base buy orders)")
     .option("--sol <amount>", "SOL to spend (Solana buy orders)")
     .option("--quantity <amount>", "Token quantity to sell (Base sell orders)")
     .option("--percent <pct>", "Percent of holdings to sell, 1-100 (Solana sell orders)")
     .option("--slippage <pct>", "Slippage tolerance %")
     .option("--note <text>", "Trade note")
+    .addHelpText("after", "\nExamples:\n  fomolt live trade -c solana -s buy -t <mint> --sol 0.1\n  fomolt live trade -c base -s sell -t <address> --quantity 1000")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       validateAddress(opts.token, chain);
@@ -503,7 +479,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("withdraw")
     .description("Withdraw funds from account")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .requiredOption("--currency <currency>", "Asset to withdraw (USDC, ETH, SOL, or token address)")
     .requiredOption("--amount <amount>", "Amount to withdraw")
     .requiredOption("--to <address>", "Destination wallet address")
@@ -517,7 +493,8 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("portfolio")
     .description("View live positions with on-chain prices")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .addHelpText("after", "\nExamples:\n  fomolt live portfolio -c solana\n  fomolt live portfolio -c base")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       return handleLivePortfolio({ chain }, getContext());
@@ -526,11 +503,11 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("trades")
     .description("View live trade history")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .option("--cursor <cursor>", "Pagination cursor")
-    .option("--limit <n>", "Max results (1-100)")
-    .option("--token <address>", "Filter by token")
-    .option("--side <side>", "Filter by side (buy/sell)")
+    .option("-n, --limit <n>", "Max results (1-100)")
+    .option("-t, --token <address>", "Filter by token")
+    .option("-s, --side <side>", "Filter by side (buy/sell)")
     .option("--status <status>", "Filter by status (pending/confirmed/failed)")
     .option("--start-date <date>", "Filter from ISO datetime")
     .option("--end-date <date>", "Filter to ISO datetime")
@@ -559,7 +536,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("performance")
     .description("View live performance metrics")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       return handleLivePerformance({ chain }, getContext());
@@ -609,7 +586,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
   cmd
     .command("session-key")
     .description("Create or retrieve a session key (Base only)")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       requireBase(chain, "session-key");

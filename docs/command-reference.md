@@ -246,7 +246,7 @@ Token discovery, pricing, and analytics for both chains. All commands require `-
 Discover tradeable tokens with optional screening filters.
 
 ```sh
-fomolt token search --chain <chain> [--mode <mode>] [--term <text>] [--address <address>] [--limit <n>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
+fomolt token search -c <chain> [--mode <mode>] [--term <text>] [-t <address>] [-n <n>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
 ```
 
 | Flag | Required | Default | Description |
@@ -254,7 +254,7 @@ fomolt token search --chain <chain> [--mode <mode>] [--term <text>] [--address <
 | `--chain <chain>` | yes | — | `base` or `solana` |
 | `--mode <mode>` | no | `trending` | `trending`, `search`, or `new` |
 | `--term <text>` | no | — | Search term (required when `mode=search`) |
-| `--address <address>` | no | — | Exact contract address (Base) or mint address (Solana) lookup (overrides `--mode`) |
+| `-t, --token <address>` | no | — | Exact contract address (Base) or mint address (Solana) lookup (overrides `--mode`) |
 | `--limit <n>` | no | `20` | Max results (1-100) |
 | `--min-liquidity <amount>` | no | — | Minimum liquidity filter |
 | `--min-volume-1h <amount>` | no | — | Minimum 1h volume in USD filter |
@@ -273,13 +273,13 @@ All filter and sort flags work on both Base and Solana.
 Get a detailed token overview including price, market cap, volume, and holder count. Returns metadata, price, market cap, top holders, supply, security flags, and more.
 
 ```sh
-fomolt token info --chain <chain> --address <address>
+fomolt token info -c <chain> -t <address>
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--chain <chain>` | yes | `base` or `solana` |
-| `--address <address>` | yes | Token contract address (Base) or mint address (Solana) |
+| `-c, --chain <chain>` | yes | `base` or `solana` |
+| `-t, --token <address>` | yes | Token contract address (Base) or mint address (Solana) |
 
 ### `token price`
 
@@ -300,14 +300,14 @@ fomolt token price --chain <chain> --token <address> [--market <market>]
 Get top token holders with balances and first-held timestamps.
 
 ```sh
-fomolt token holders --chain <chain> --address <address> [--limit <n>] [--cursor <cursor>]
+fomolt token holders -c <chain> -t <address> [-n <n>] [--cursor <cursor>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--chain <chain>` | yes | — | `base` or `solana` |
-| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
-| `--limit <n>` | no | 25 | Max results (1-100) |
+| `-c, --chain <chain>` | yes | — | `base` or `solana` |
+| `-t, --token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `-n, --limit <n>` | no | 25 | Max results (1-100) |
 | `--cursor <cursor>` | no | — | Pagination cursor from previous response |
 
 ### `token trades`
@@ -315,14 +315,14 @@ fomolt token holders --chain <chain> --address <address> [--limit <n>] [--cursor
 Get recent trade events (swaps) for a token.
 
 ```sh
-fomolt token trades --chain <chain> --address <address> [--limit <n>] [--cursor <cursor>]
+fomolt token trades -c <chain> -t <address> [-n <n>] [--cursor <cursor>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--chain <chain>` | yes | — | `base` or `solana` |
-| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
-| `--limit <n>` | no | 25 | Max results (1-100) |
+| `-c, --chain <chain>` | yes | — | `base` or `solana` |
+| `-t, --token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `-n, --limit <n>` | no | 25 | Max results (1-100) |
 | `--cursor <cursor>` | no | — | Pagination cursor from previous response |
 
 ### `token wallets`
@@ -330,13 +330,13 @@ fomolt token trades --chain <chain> --address <address> [--limit <n>] [--cursor 
 Discover wallets trading a specific token, ranked by performance.
 
 ```sh
-fomolt token wallets --chain <chain> --address <address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <n>] [--offset <n>]
+fomolt token wallets -c <chain> -t <address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [-n <n>] [--offset <n>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--chain <chain>` | yes | — | `base` or `solana` |
-| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `-c, --chain <chain>` | yes | — | `base` or `solana` |
+| `-t, --token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
 | `--sort <field>` | no | pnl | Sort by `pnl` or `volume` |
 | `--period <period>` | no | 30d | Time period: `1d`, `1w`, `30d`, `1y` |
 | `--limit <n>` | no | 20 | Max results (1-100) |
@@ -347,13 +347,13 @@ fomolt token wallets --chain <chain> --address <address> [--sort pnl|volume] [--
 Get top traders for a specific token, ranked by realized PnL.
 
 ```sh
-fomolt token top-traders --chain <chain> --address <address> [--period 1d|1w|30d|1y] [--limit <n>] [--offset <n>]
+fomolt token top-traders -c <chain> -t <address> [--period 1d|1w|30d|1y] [-n <n>] [--offset <n>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--chain <chain>` | yes | — | `base` or `solana` |
-| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `-c, --chain <chain>` | yes | — | `base` or `solana` |
+| `-t, --token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
 | `--period <period>` | no | 30d | Time period: `1d`, `1w`, `30d`, `1y` |
 | `--limit <n>` | no | 25 | Max results (1-100) |
 | `--offset <n>` | no | 0 | Offset for pagination |
@@ -363,13 +363,13 @@ fomolt token top-traders --chain <chain> --address <address> [--period 1d|1w|30d
 Get sparkline price data for a token over a time range.
 
 ```sh
-fomolt token sparklines --chain <chain> --address <address> [--resolution <res>] [--from <unix>] [--to <unix>]
+fomolt token sparklines -c <chain> -t <address> [--resolution <res>] [--from <unix>] [--to <unix>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--chain <chain>` | yes | — | `base` or `solana` |
-| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `-c, --chain <chain>` | yes | — | `base` or `solana` |
+| `-t, --token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
 | `--resolution <res>` | no | 60 | Candle resolution: `1S`, `5S`, `15S`, `30S`, `1`, `5`, `15`, `30`, `60`, `240`, `720`, `1D`, `7D` |
 | `--from <unix>` | no | — | Start unix timestamp |
 | `--to <unix>` | no | — | End unix timestamp |
@@ -379,14 +379,14 @@ fomolt token sparklines --chain <chain> --address <address> [--resolution <res>]
 List all trading pairs for a token with metadata (liquidity, volume, protocol).
 
 ```sh
-fomolt token pairs --chain <chain> --address <address> [--limit <n>]
+fomolt token pairs -c <chain> -t <address> [-n <n>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--chain <chain>` | yes | — | `base` or `solana` |
-| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
-| `--limit <n>` | no | 25 | Max results (1-100) |
+| `-c, --chain <chain>` | yes | — | `base` or `solana` |
+| `-t, --token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `-n, --limit <n>` | no | 25 | Max results (1-100) |
 
 ### `token pair-stats`
 
@@ -426,14 +426,14 @@ fomolt token liquidity-locks --chain <chain> [--token-address <address>] [--pair
 Get mint and burn lifecycle events for a token.
 
 ```sh
-fomolt token lifecycle --chain <chain> --address <address> [--limit <n>] [--cursor <cursor>]
+fomolt token lifecycle -c <chain> -t <address> [-n <n>] [--cursor <cursor>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--chain <chain>` | yes | — | `base` or `solana` |
-| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
-| `--limit <n>` | no | 25 | Max results (1-100) |
+| `-c, --chain <chain>` | yes | — | `base` or `solana` |
+| `-t, --token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `-n, --limit <n>` | no | 25 | Max results (1-100) |
 | `--cursor <cursor>` | no | — | Pagination cursor |
 
 ### `token community-notes`
@@ -441,13 +441,13 @@ fomolt token lifecycle --chain <chain> --address <address> [--limit <n>] [--curs
 Get community reports including scam flags, logo changes, and attribute changes for tokens.
 
 ```sh
-fomolt token community-notes [--chain <chain>] [--address <address>] [--proposal-type <type>] [--limit <n>] [--cursor <cursor>]
+fomolt token community-notes [-c <chain>] [-t <address>] [--proposal-type <type>] [-n <n>] [--cursor <cursor>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--chain <chain>` | no | — | `base` or `solana` (required when using `--address`) |
-| `--address <address>` | no | — | Token contract address (requires `--chain`) |
+| `-c, --chain <chain>` | no | — | `base` or `solana` (required when using `--token`) |
+| `-t, --token <address>` | no | — | Token contract address (requires `--chain`) |
 | `--proposal-type <type>` | no | — | Filter by type: `SCAM`, `LOGO`, `ATTRIBUTE` |
 | `--limit <n>` | no | 25 | Max results (1-100) |
 | `--cursor <cursor>` | no | — | Pagination cursor |

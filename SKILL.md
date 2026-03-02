@@ -38,7 +38,6 @@ Always check `ok` first. On success, read `data`. On error, read `code` to decid
 | Code | Meaning | What to Do |
 |------|---------|------------|
 | `NO_CREDENTIALS` | No API key configured | Run `fomolt auth register` or `fomolt auth import` |
-| `COMMAND_MOVED` | Command relocated to new namespace | Use the new command shown in the error message |
 | `INVALID_CHAIN` | `--chain` not "base" or "solana" | Use `--chain base` or `--chain solana` |
 | `INVALID_MARKET` | `--market` not "paper" or "live" | Use `--market paper` or `--market live` |
 | `INVALID_ADDRESS` | Address format wrong for chain | Base: `0x` + 40 hex chars. Solana: 32-44 base58 chars |
@@ -195,55 +194,55 @@ Read-only token data and analytics. Works independently of paper/live trading mo
 
 ```sh
 # Discover tradeable tokens (with screening filters)
-fomolt token search --chain base [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
-fomolt token search --chain solana [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
+fomolt token search -c base [--mode trending|search|new] [--term <text>] [-t <address>] [-n <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
+fomolt token search -c solana [--mode trending|search|new] [--term <text>] [-t <address>] [-n <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
 
 # Get detailed token overview (price, market cap, volume, holders)
-fomolt token info --chain base --address <0x-address>
-fomolt token info --chain solana --address <mint-address>
+fomolt token info -c base -t <0x-address>
+fomolt token info -c solana -t <mint-address>
 
 # Look up the current price of a token (default: live prices)
-fomolt token price --chain base --token <0x-address> [--market paper|live]
-fomolt token price --chain solana --token <mint-address> [--market paper|live]
+fomolt token price -c base -t <0x-address> [--market paper|live]
+fomolt token price -c solana -t <mint-address> [--market paper|live]
 
 # Token holders — top holders with balances and first-held timestamps
-fomolt token holders --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
-fomolt token holders --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
+fomolt token holders -c base -t <0x-address> [-n <1-100>] [--cursor <cursor>]
+fomolt token holders -c solana -t <mint-address> [-n <1-100>] [--cursor <cursor>]
 
 # Token trade events — recent swaps for a token
-fomolt token trades --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
-fomolt token trades --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
+fomolt token trades -c base -t <0x-address> [-n <1-100>] [--cursor <cursor>]
+fomolt token trades -c solana -t <mint-address> [-n <1-100>] [--cursor <cursor>]
 
 # Token wallets — find top wallets trading a specific token
-fomolt token wallets --chain base --address <0x-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
-fomolt token wallets --chain solana --address <mint-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+fomolt token wallets -c base -t <0x-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [-n <1-100>] [--offset <n>]
+fomolt token wallets -c solana -t <mint-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [-n <1-100>] [--offset <n>]
 
 # Token top traders — top traders by PnL for a specific token
-fomolt token top-traders --chain base --address <0x-address> [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
-fomolt token top-traders --chain solana --address <mint-address> [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+fomolt token top-traders -c base -t <0x-address> [--period 1d|1w|30d|1y] [-n <1-100>] [--offset <n>]
+fomolt token top-traders -c solana -t <mint-address> [--period 1d|1w|30d|1y] [-n <1-100>] [--offset <n>]
 
 # Token sparklines — sparkline price data for a token
-fomolt token sparklines --chain base --address <0x-address> [--resolution <res>] [--from <unix>] [--to <unix>]
-fomolt token sparklines --chain solana --address <mint-address> [--resolution <res>] [--from <unix>] [--to <unix>]
+fomolt token sparklines -c base -t <0x-address> [--resolution <res>] [--from <unix>] [--to <unix>]
+fomolt token sparklines -c solana -t <mint-address> [--resolution <res>] [--from <unix>] [--to <unix>]
 
 # Token pairs — list trading pairs with metadata for a token
-fomolt token pairs --chain base --address <0x-address> [--limit <1-100>]
-fomolt token pairs --chain solana --address <mint-address> [--limit <1-100>]
+fomolt token pairs -c base -t <0x-address> [-n <1-100>]
+fomolt token pairs -c solana -t <mint-address> [-n <1-100>]
 
 # Token pair stats — detailed statistics for a specific trading pair
-fomolt token pair-stats --chain base --pair-address <0x-address> [--durations <list>] [--bucket-count <n>] [--token-of-interest token0|token1]
-fomolt token pair-stats --chain solana --pair-address <mint-address> [--durations <list>] [--bucket-count <n>] [--token-of-interest token0|token1]
+fomolt token pair-stats -c base --pair-address <0x-address> [--durations <list>] [--bucket-count <n>] [--token-of-interest token0|token1]
+fomolt token pair-stats -c solana --pair-address <mint-address> [--durations <list>] [--bucket-count <n>] [--token-of-interest token0|token1]
 
 # Token liquidity locks — LP lock/vesting data for a token or pair
-fomolt token liquidity-locks --chain base [--token-address <0x-address>] [--pair-address <0x-address>] [--cursor <cursor>]
-fomolt token liquidity-locks --chain solana [--token-address <mint-address>] [--pair-address <mint-address>] [--cursor <cursor>]
+fomolt token liquidity-locks -c base [--token-address <0x-address>] [--pair-address <0x-address>] [--cursor <cursor>]
+fomolt token liquidity-locks -c solana [--token-address <mint-address>] [--pair-address <mint-address>] [--cursor <cursor>]
 
 # Token lifecycle events — mint/burn events for a token
-fomolt token lifecycle --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
-fomolt token lifecycle --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
+fomolt token lifecycle -c base -t <0x-address> [-n <1-100>] [--cursor <cursor>]
+fomolt token lifecycle -c solana -t <mint-address> [-n <1-100>] [--cursor <cursor>]
 
 # Token community notes — community reports (scam flags, logo changes)
-fomolt token community-notes [--chain base|solana] [--address <address>] [--proposal-type SCAM|LOGO|ATTRIBUTE] [--limit <1-100>] [--cursor <cursor>]
+fomolt token community-notes [-c base|solana] [-t <address>] [--proposal-type SCAM|LOGO|ATTRIBUTE] [-n <1-100>] [--cursor <cursor>]
 ```
 
 Sort fields for `token search`: `trending`, `volume`, `market_cap`, `holders`, `created`. Order: `asc` or `desc`.
@@ -381,6 +380,48 @@ fomolt watch tokens --chain base [--interval <seconds>] [--min-liquidity <amount
 ```
 
 Defaults: `--market paper`, `--interval 10`.
+
+### Buy / Sell Shortcuts
+
+Top-level shortcuts that delegate to `live trade` (or `paper trade` with `-m paper`). The `--side` is inferred from the command name.
+
+```sh
+# Buy (defaults to live market)
+fomolt buy -c solana -t <mint> --sol 0.1
+fomolt buy -c base -t <0x-address> --usdc 100
+
+# Sell (defaults to live market)
+fomolt sell -c solana -t <mint> --percent 100
+fomolt sell -c base -t <0x-address> --quantity 5000
+
+# Use paper market instead
+fomolt buy -c solana -t <mint> --sol 0.5 -m paper
+fomolt sell -c solana -t <mint> --percent 50 -m paper
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `-c, --chain <chain>` | yes | — | `base` or `solana` |
+| `-t, --token <address>` | yes | — | Token address |
+| `--usdc <amount>` | buy only (Base) | — | USDC to spend |
+| `--sol <amount>` | buy only (Solana) | — | SOL to spend |
+| `--quantity <amount>` | sell only (Base) | — | Token quantity to sell |
+| `--percent <pct>` | sell only (Solana) | — | Percent of holdings to sell (0.01-100) |
+| `-m, --market <market>` | no | `live` | `live` or `paper` |
+| `--slippage <pct>` | no | — | Slippage tolerance % |
+| `--note <text>` | no | — | Trade note |
+
+### Short Flag Aliases
+
+All commands support short aliases for the most common flags:
+
+| Short | Long | Description |
+|-------|------|-------------|
+| `-c` | `--chain` | Chain: base or solana |
+| `-t` | `--token` | Token address |
+| `-s` | `--side` | buy or sell |
+| `-n` | `--limit` | Max results |
+| `-m` | `--market` | Market: live or paper |
 
 ### Copy Trading
 
@@ -680,4 +721,4 @@ Everything else requires auth.
 
 **Safe to retry (read-only):** `token search`, `token info`, `token price`, `token holders`, `token trades`, `token wallets`, `token top-traders`, `token sparklines`, `token pairs`, `token pair-stats`, `token liquidity-locks`, `token lifecycle`, `token community-notes`, `wallet`, `wallet top`, `portfolio`, `balance`, `quote`, `trades`, `performance`, `feed`, `ohlcv`, `me`, `achievements`, `leaderboard`, `twitter search`, `twitter user`, `twitter tweets`, `twitter tweet`, `twitter trends`, `twitter thread`, `twitter quotes`, `twitter replies`, `twitter user-search`, `twitter followers`, `twitter following`, `twitter mentions`, `twitter usage`
 
-**NOT safe to retry blindly:** `trade` (executes another trade), `withdraw` (sends funds again). If a trade command fails, check `live trades --chain base --sort desc --limit 1` to see if it actually went through before retrying.
+**NOT safe to retry blindly:** `trade`, `buy`, `sell` (executes another trade), `withdraw` (sends funds again). If a trade command fails, check `live trades --chain base --sort desc --limit 1` to see if it actually went through before retrying.

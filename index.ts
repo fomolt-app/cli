@@ -18,6 +18,7 @@ import { copyCommands } from "./src/commands/copy";
 import { skillCommand } from "./src/commands/skill";
 import { twitterCommands } from "./src/commands/twitter";
 import { sessionCommands } from "./src/commands/session";
+import { buyCommand, sellCommand } from "./src/commands/shortcuts";
 
 const commanderErrorOutput = {
   writeErr: (str: string) => {
@@ -161,6 +162,8 @@ async function main() {
     twitterCommands(getContext),
     updateCommands(),
     skillCommand(),
+    buyCommand(getContext),
+    sellCommand(getContext),
   ]) {
     // Commander's addCommand() doesn't inherit configureOutput, so apply manually
     cmd.configureOutput(commanderErrorOutput);
