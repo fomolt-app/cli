@@ -6,6 +6,8 @@ import type { CmdContext } from "./src/context";
 import { authCommands } from "./src/commands/auth";
 import { paperCommands } from "./src/commands/paper";
 import { liveCommands } from "./src/commands/live";
+import { tokenCommands } from "./src/commands/token";
+import { walletCommands } from "./src/commands/wallet";
 import { achievementsCommand, leaderboardCommand } from "./src/commands/social";
 import { feedCommand, specCommand, ohlcvCommand } from "./src/commands/feed";
 import { watchCommands } from "./src/commands/watch";
@@ -75,6 +77,12 @@ async function showStatus() {
     console.log("  fomolt live balance --chain base      fomolt live balance --chain solana");
     console.log("  fomolt live trade --chain base ...    fomolt live trade --chain solana ...");
     console.log("");
+    console.log("  Token Data (Both Chains)             Wallet Analytics (Both Chains)");
+    console.log("  ────────────────────────             ───────────────────────────────");
+    console.log("  fomolt token search --chain ...       fomolt wallet --chain ... --address ...");
+    console.log("  fomolt token info --chain ...         fomolt wallet top --chain ...");
+    console.log("  fomolt token price --chain ...");
+    console.log("");
     console.log("  Profile & Social                     Utilities");
     console.log("  ───────────────                      ─────────");
     console.log("  fomolt auth me                        fomolt feed");
@@ -135,6 +143,8 @@ async function main() {
     authCommands(getContext),
     paperCommands(getContext),
     liveCommands(getContext),
+    tokenCommands(getContext),
+    walletCommands(getContext),
     watchCommands(getContext),
     configCommands(),
     achievementsCommand(getContext),

@@ -8,6 +8,7 @@ import {
   validateChain,
   validateSolanaAddress,
   validateAddress,
+  validateMarket,
 } from "../src/validate";
 
 let stderr: string[] = [];
@@ -361,5 +362,24 @@ describe("validateAddress", () => {
       validateAddress("0x4200000000000000000000000000000000000006", "solana"),
       "INVALID_ADDRESS"
     );
+  });
+});
+
+// --- validateMarket ---
+describe("validateMarket", () => {
+  test("paper is valid", () => {
+    expect(validateMarket("paper")).toBe("paper");
+  });
+
+  test("live is valid", () => {
+    expect(validateMarket("live")).toBe("live");
+  });
+
+  test("invalid value rejects", () => {
+    expectError(() => validateMarket("sandbox"), "INVALID_MARKET");
+  });
+
+  test("empty string rejects", () => {
+    expectError(() => validateMarket(""), "INVALID_MARKET");
   });
 });

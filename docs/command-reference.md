@@ -161,18 +161,6 @@ No auth required. If the removed agent was active, auto-selects another.
 
 Simulated trading with 10,000 USDC (Base) or 50 SOL (Solana). All commands require auth.
 
-### `paper price`
-
-Look up the current price of a token.
-
-```sh
-fomolt paper price --token <address>
-```
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--token <address>` | yes | Token contract address (0x hex for Base) or mint address (base58 for Solana) |
-
 ### `paper trade`
 
 Buy or sell a token with paper USDC (Base) or paper SOL (Solana).
@@ -249,20 +237,21 @@ fomolt paper pnl-image --token <address>
 
 ---
 
-## Live Trading
+## Token Data
 
-On-chain trading on Base & Solana through your smart account. All commands require auth.
+Token discovery, pricing, and analytics for both chains. All commands require `--chain` and auth.
 
-### `live tokens`
+### `token search`
 
 Discover tradeable tokens with optional screening filters.
 
 ```sh
-fomolt live tokens [--mode <mode>] [--term <text>] [--address <address>] [--limit <n>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
+fomolt token search --chain <chain> [--mode <mode>] [--term <text>] [--address <address>] [--limit <n>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
 | `--mode <mode>` | no | `trending` | `trending`, `search`, or `new` |
 | `--term <text>` | no | — | Search term (required when `mode=search`) |
 | `--address <address>` | no | — | Exact contract address (Base) or mint address (Solana) lookup (overrides `--mode`) |
@@ -279,56 +268,97 @@ fomolt live tokens [--mode <mode>] [--term <text>] [--address <address>] [--limi
 
 All filter and sort flags work on both Base and Solana.
 
-### `live token-info`
+### `token info`
 
 Get a detailed token overview including price, market cap, volume, and holder count. Returns metadata, price, market cap, top holders, supply, security flags, and more.
 
 ```sh
-fomolt live token-info --address <address>
+fomolt token info --chain <chain> --address <address>
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
+| `--chain <chain>` | yes | `base` or `solana` |
 | `--address <address>` | yes | Token contract address (Base) or mint address (Solana) |
 
-### `live holders`
+### `token price`
+
+Look up the current price of a token. Supports both paper and live market modes.
+
+```sh
+fomolt token price --chain <chain> --token <address> [--market <market>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
+| `--token <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--market <market>` | no | `live` | `paper` or `live` |
+
+### `token holders`
 
 Get top token holders with balances and first-held timestamps.
 
 ```sh
-fomolt live holders --address <address> [--limit <n>] [--cursor <cursor>]
+fomolt token holders --chain <chain> --address <address> [--limit <n>] [--cursor <cursor>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
 | `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
 | `--limit <n>` | no | 25 | Max results (1-100) |
 | `--cursor <cursor>` | no | — | Pagination cursor from previous response |
 
-### `live token-trades`
+### `token trades`
 
 Get recent trade events (swaps) for a token.
 
 ```sh
-fomolt live token-trades --address <address> [--limit <n>] [--cursor <cursor>]
+fomolt token trades --chain <chain> --address <address> [--limit <n>] [--cursor <cursor>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
 | `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
 | `--limit <n>` | no | 25 | Max results (1-100) |
 | `--cursor <cursor>` | no | — | Pagination cursor from previous response |
 
-### `live wallet`
+### `token wallets`
 
-Analyze any on-chain wallet: stats, trades, chart, or balances.
+Discover wallets trading a specific token, ranked by performance.
 
 ```sh
-fomolt live wallet --address <address> [--mode stats|trades|chart|balances]
+fomolt token wallets --chain <chain> --address <address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <n>] [--offset <n>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
+| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--sort <field>` | no | pnl | Sort by `pnl` or `volume` |
+| `--period <period>` | no | 30d | Time period: `1d`, `1w`, `30d`, `1y` |
+| `--limit <n>` | no | 20 | Max results (1-100) |
+| `--offset <n>` | no | 0 | Offset for pagination |
+
+---
+
+## Wallet Analytics
+
+Wallet analysis for both chains. All commands require `--chain` and auth.
+
+### `wallet`
+
+Analyze any on-chain wallet: stats, trades, chart, or balances.
+
+```sh
+fomolt wallet --chain <chain> --address <address> [--mode stats|trades|chart|balances]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
 | `--address <address>` | yes | — | Wallet address |
 | `--mode <mode>` | no | stats | `stats`, `trades`, `chart`, or `balances` |
 | `--limit <n>` | no | 25 | Max results (trades/balances mode) |
@@ -338,36 +368,27 @@ fomolt live wallet --address <address> [--mode stats|trades|chart|balances]
 | `--start <unix>` | no | — | Chart start timestamp (chart mode) |
 | `--end <unix>` | no | — | Chart end timestamp (chart mode) |
 
-### `live top-wallets`
+### `wallet top`
 
 Discover top-performing wallets on a chain.
 
 ```sh
-fomolt live top-wallets [--sort pnl|volume|win-rate] [--period 1d|1w|30d|1y] [--limit <n>] [--offset <n>]
+fomolt wallet top --chain <chain> [--sort pnl|volume|win-rate] [--period 1d|1w|30d|1y] [--limit <n>] [--offset <n>]
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
 | `--sort <field>` | no | pnl | Sort by `pnl`, `volume`, or `win-rate` |
 | `--period <period>` | no | 30d | Time period: `1d`, `1w`, `30d`, `1y` |
 | `--limit <n>` | no | 20 | Max results (1-100) |
 | `--offset <n>` | no | 0 | Offset for pagination |
 
-### `live token-wallets`
+---
 
-Discover wallets trading a specific token, ranked by performance.
+## Live Trading
 
-```sh
-fomolt live token-wallets --address <address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <n>] [--offset <n>]
-```
-
-| Flag | Required | Default | Description |
-|------|----------|---------|-------------|
-| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
-| `--sort <field>` | no | pnl | Sort by `pnl` or `volume` |
-| `--period <period>` | no | 30d | Time period: `1d`, `1w`, `30d`, `1y` |
-| `--limit <n>` | no | 20 | Max results (1-100) |
-| `--offset <n>` | no | 0 | Offset for pagination |
+On-chain trading on Base & Solana through your smart account. All commands require auth.
 
 ### `live balance`
 
@@ -488,18 +509,6 @@ fomolt live performance
 ```
 
 No flags.
-
-### `live price`
-
-Look up the current price of a token.
-
-```sh
-fomolt live price --token <address>
-```
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--token <address>` | yes | Token contract address (Base) or mint address (Solana) |
 
 ### `live session-key`
 
@@ -964,6 +973,8 @@ fomolt update uninstall [--purge]
 | `auth init`, `auth me`, `auth update` | Yes |
 | `auth list`, `auth switch`, `auth remove` | No (local) |
 | All `paper *` commands | Yes |
+| All `token *` commands | Yes |
+| All `wallet *` commands | Yes |
 | All `live *` commands | Yes |
 | All `watch *` commands | Yes |
 | `copy` | Yes |

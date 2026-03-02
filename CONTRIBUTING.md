@@ -27,8 +27,10 @@ src/
   validate.ts         Input validation (integers, addresses, limits, slippage)
   commands/
     auth.ts           Authentication (register, import, recover, init, me, update)
-    paper.ts          Paper trading (price, trade, portfolio, trades, performance, pnl-image)
-    live.ts           Live on-chain trading (tokens, quote, trade, withdraw, balance, portfolio)
+    paper.ts          Paper trading (trade, portfolio, trades, performance, pnl-image)
+    live.ts           Live on-chain trading (quote, trade, withdraw, balance, portfolio)
+    token.ts          Token data & analytics (search, info, price, holders, trades, wallets)
+    wallet.ts         Wallet analytics (stats, trades, chart, balances, top wallets)
     watch.ts          Polling loops (portfolio, price)
     copy.ts           Copy trading
     social.ts         Achievements, leaderboard
