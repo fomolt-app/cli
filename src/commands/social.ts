@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { success } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-import { validateLimit } from "../validate";
+import { validateLimit, validateLeaderboardPeriod, validateMarket } from "../validate";
 
 export async function handleAchievements(ctx: CmdContext): Promise<void> {
   const client = await getAuthClient(ctx);
@@ -35,6 +35,8 @@ export function leaderboardCommand(getContext: () => CmdContext): Command {
     .option("--market <market>", "Market: paper or live", "live")
     .option("--limit <n>", "Max results (1-100)", "25")
     .action(async (opts) => {
+      if (opts.period) validateLeaderboardPeriod(opts.period);
+      if (opts.market) validateMarket(opts.market);
       validateLimit(opts.limit);
       return handleLeaderboard(opts, getContext());
     });

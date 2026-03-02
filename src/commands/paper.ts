@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { success, successWithHint, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-import { validateTokenAddress, validatePositiveNumber, validateLimit, validateChain, validateAddress, type Chain } from "../validate";
+import { validateTokenAddress, validatePositiveNumber, validateLimit, validateChain, validateSide, validateAddress, type Chain } from "../validate";
 
 export async function handlePaperPrice(
   opts: { token: string; chain: Chain },
@@ -94,8 +94,14 @@ export function paperCommands(getContext: () => CmdContext): Command {
   cmd
     .command("trade")
     .description("Buy or sell a token. Base buys: --usdc. Base sells: --quantity. Solana buys: --sol. Solana sells: --percent (0.01-100)")
-    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
-    .requiredOption("-s, --side <side>", "buy or sell")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana", (val, prev) => {
+      if (prev !== undefined) { error("--chain specified multiple times", "INVALID_ARGS"); process.exit(1); }
+      return val;
+    })
+    .requiredOption("-s, --side <side>", "buy or sell", (val, prev) => {
+      if (prev !== undefined) { error("--side specified multiple times", "INVALID_ARGS"); process.exit(1); }
+      return val;
+    })
     .requiredOption("-t, --token <address>", "Token address")
     .option("--usdc <amount>", "USDC to spend (Base buy orders)")
     .option("--sol <amount>", "SOL to spend (Solana buy orders)")
@@ -105,6 +111,7 @@ export function paperCommands(getContext: () => CmdContext): Command {
     .addHelpText("after", "\nExamples:\n  fomolt paper trade -c base -s buy -t <address> --usdc 500\n  fomolt paper trade -c solana -s sell -t <mint> --percent 50")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
+      validateSide(opts.side);
       validateAddress(opts.token, chain);
       if (chain === "base" && opts.sol) {
         error("Use --usdc for Base buys, --sol is for Solana", "WRONG_CHAIN_FLAG");

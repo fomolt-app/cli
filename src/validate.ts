@@ -1,5 +1,15 @@
 import { error } from "./output";
 
+export type Side = "buy" | "sell";
+
+export function validateSide(value: string): Side {
+  if (value !== "buy" && value !== "sell") {
+    error(`--side must be "buy" or "sell", got "${value}"`, "INVALID_SIDE");
+    process.exit(1);
+  }
+  return value;
+}
+
 export type Chain = "base" | "solana";
 
 export function validateChain(value: string): Chain {
@@ -95,9 +105,9 @@ export function validateUsername(value: string): string {
 }
 
 export function validateTweetId(value: string): string {
-  if (!/^\d+$/.test(value)) {
+  if (!/^\d{1,20}$/.test(value)) {
     error(
-      `Tweet ID must be numeric, got "${value}"`,
+      `Tweet ID must be 1-20 digits, got "${value}"`,
       "INVALID_TWEET_ID"
     );
     process.exit(1);
@@ -211,6 +221,17 @@ export function validatePairStatsDurations(value: string): PairStatsDuration[] {
     }
   }
   return parts;
+}
+
+const VALID_LEADERBOARD_PERIODS = ["24h", "7d", "30d", "all"] as const;
+export type LeaderboardPeriod = (typeof VALID_LEADERBOARD_PERIODS)[number];
+
+export function validateLeaderboardPeriod(value: string): LeaderboardPeriod {
+  if (!VALID_LEADERBOARD_PERIODS.includes(value as LeaderboardPeriod)) {
+    error(`--period must be one of ${VALID_LEADERBOARD_PERIODS.join(", ")}, got "${value}"`, "INVALID_PERIOD");
+    process.exit(1);
+  }
+  return value as LeaderboardPeriod;
 }
 
 const VALID_PROPOSAL_TYPES = ["SCAM", "LOGO", "ATTRIBUTE"] as const;
