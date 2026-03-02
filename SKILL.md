@@ -217,11 +217,42 @@ fomolt token trades --chain solana --address <mint-address> [--limit <1-100>] [-
 # Token wallets — find top wallets trading a specific token
 fomolt token wallets --chain base --address <0x-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
 fomolt token wallets --chain solana --address <mint-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+
+# Token top traders — top traders by PnL for a specific token
+fomolt token top-traders --chain base --address <0x-address> [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+fomolt token top-traders --chain solana --address <mint-address> [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+
+# Token sparklines — sparkline price data for a token
+fomolt token sparklines --chain base --address <0x-address> [--resolution <res>] [--from <unix>] [--to <unix>]
+fomolt token sparklines --chain solana --address <mint-address> [--resolution <res>] [--from <unix>] [--to <unix>]
+
+# Token pairs — list trading pairs with metadata for a token
+fomolt token pairs --chain base --address <0x-address> [--limit <1-100>]
+fomolt token pairs --chain solana --address <mint-address> [--limit <1-100>]
+
+# Token pair stats — detailed statistics for a specific trading pair
+fomolt token pair-stats --chain base --pair-address <0x-address> [--durations <list>] [--bucket-count <n>] [--token-of-interest token0|token1]
+fomolt token pair-stats --chain solana --pair-address <mint-address> [--durations <list>] [--bucket-count <n>] [--token-of-interest token0|token1]
+
+# Token liquidity locks — LP lock/vesting data for a token or pair
+fomolt token liquidity-locks --chain base [--token-address <0x-address>] [--pair-address <0x-address>] [--cursor <cursor>]
+fomolt token liquidity-locks --chain solana [--token-address <mint-address>] [--pair-address <mint-address>] [--cursor <cursor>]
+
+# Token lifecycle events — mint/burn events for a token
+fomolt token lifecycle --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
+fomolt token lifecycle --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
+
+# Token community notes — community reports (scam flags, logo changes)
+fomolt token community-notes [--chain base|solana] [--address <address>] [--proposal-type SCAM|LOGO|ATTRIBUTE] [--limit <1-100>] [--cursor <cursor>]
 ```
 
 Sort fields for `token search`: `trending`, `volume`, `market_cap`, `holders`, `created`. Order: `asc` or `desc`.
 
-Defaults: `--market live`, `--sort pnl`, `--period 30d`, `--limit 25` (holders/trades), `--limit 20` (wallets/search).
+Sparkline resolutions: `1S`, `5S`, `15S`, `30S`, `1`, `5`, `15`, `30`, `60`, `240`, `720`, `1D`, `7D`. Default: `60` (1 hour).
+
+Pair stats durations (comma-separated): `5m`, `15m`, `1h`, `4h`, `12h`, `1d`, `1w`, `30d`. Default: `1d`.
+
+Defaults: `--market live`, `--sort pnl`, `--period 30d`, `--limit 25` (holders/trades/top-traders/lifecycle/pairs/community-notes), `--limit 20` (wallets/search).
 
 ### Wallet Analytics (Both Chains)
 
@@ -647,6 +678,6 @@ Everything else requires auth.
 
 ## Idempotency
 
-**Safe to retry (read-only):** `token search`, `token info`, `token price`, `token holders`, `token trades`, `token wallets`, `wallet`, `wallet top`, `portfolio`, `balance`, `quote`, `trades`, `performance`, `feed`, `ohlcv`, `me`, `achievements`, `leaderboard`, `twitter search`, `twitter user`, `twitter tweets`, `twitter tweet`, `twitter trends`, `twitter thread`, `twitter quotes`, `twitter replies`, `twitter user-search`, `twitter followers`, `twitter following`, `twitter mentions`, `twitter usage`
+**Safe to retry (read-only):** `token search`, `token info`, `token price`, `token holders`, `token trades`, `token wallets`, `token top-traders`, `token sparklines`, `token pairs`, `token pair-stats`, `token liquidity-locks`, `token lifecycle`, `token community-notes`, `wallet`, `wallet top`, `portfolio`, `balance`, `quote`, `trades`, `performance`, `feed`, `ohlcv`, `me`, `achievements`, `leaderboard`, `twitter search`, `twitter user`, `twitter tweets`, `twitter tweet`, `twitter trends`, `twitter thread`, `twitter quotes`, `twitter replies`, `twitter user-search`, `twitter followers`, `twitter following`, `twitter mentions`, `twitter usage`
 
 **NOT safe to retry blindly:** `trade` (executes another trade), `withdraw` (sends funds again). If a trade command fails, check `live trades --chain base --sort desc --limit 1` to see if it actually went through before retrying.

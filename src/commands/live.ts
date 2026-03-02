@@ -288,6 +288,96 @@ export async function handleLiveTokenWallets(
   success(data);
 }
 
+export async function handleLiveTopTraders(
+  opts: { address: string; chain: Chain; period?: string; limit?: string; offset?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { address: opts.address, chain: opts.chain };
+  if (opts.period) params.period = opts.period;
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.offset) params.offset = opts.offset;
+  const data = await client.get("/agent/live/dex/top-traders", params);
+  success(data);
+}
+
+export async function handleLiveSparklines(
+  opts: { address: string; chain: Chain; resolution?: string; from?: string; to?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { address: opts.address, chain: opts.chain };
+  if (opts.resolution) params.resolution = opts.resolution;
+  if (opts.from) params.from = opts.from;
+  if (opts.to) params.to = opts.to;
+  const data = await client.get("/agent/live/dex/sparklines", params);
+  success(data);
+}
+
+export async function handleLivePairStats(
+  opts: { pairAddress: string; chain: Chain; durations?: string; bucketCount?: string; tokenOfInterest?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { pairAddress: opts.pairAddress, chain: opts.chain };
+  if (opts.durations) params.durations = opts.durations;
+  if (opts.bucketCount) params.bucketCount = opts.bucketCount;
+  if (opts.tokenOfInterest) params.tokenOfInterest = opts.tokenOfInterest;
+  const data = await client.get("/agent/live/dex/pair-stats", params);
+  success(data);
+}
+
+export async function handleLiveLiquidityLocks(
+  opts: { chain: Chain; pairAddress?: string; tokenAddress?: string; cursor?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { chain: opts.chain };
+  if (opts.pairAddress) params.pairAddress = opts.pairAddress;
+  if (opts.tokenAddress) params.tokenAddress = opts.tokenAddress;
+  if (opts.cursor) params.cursor = opts.cursor;
+  const data = await client.get("/agent/live/dex/liquidity-locks", params);
+  success(data);
+}
+
+export async function handleLiveLifecycleEvents(
+  opts: { address: string; chain: Chain; limit?: string; cursor?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { address: opts.address, chain: opts.chain };
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.cursor) params.cursor = opts.cursor;
+  const data = await client.get("/agent/live/dex/lifecycle-events", params);
+  success(data);
+}
+
+export async function handleLiveTokenPairs(
+  opts: { address: string; chain: Chain; limit?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = { address: opts.address, chain: opts.chain };
+  if (opts.limit) params.limit = opts.limit;
+  const data = await client.get("/agent/live/dex/token-pairs", params);
+  success(data);
+}
+
+export async function handleLiveCommunityNotes(
+  opts: { chain?: Chain; address?: string; proposalType?: string; limit?: string; cursor?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const params: Record<string, string> = {};
+  if (opts.chain) params.chain = opts.chain;
+  if (opts.address) params.address = opts.address;
+  if (opts.proposalType) params.proposalType = opts.proposalType;
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.cursor) params.cursor = opts.cursor;
+  const data = await client.get("/agent/live/dex/community-notes", params);
+  success(data);
+}
+
 export function liveCommands(getContext: () => CmdContext): Command {
   const cmd = new Command("live").description(
     "Live on-chain trading on Base & Solana"

@@ -342,6 +342,116 @@ fomolt token wallets --chain <chain> --address <address> [--sort pnl|volume] [--
 | `--limit <n>` | no | 20 | Max results (1-100) |
 | `--offset <n>` | no | 0 | Offset for pagination |
 
+### `token top-traders`
+
+Get top traders for a specific token, ranked by realized PnL.
+
+```sh
+fomolt token top-traders --chain <chain> --address <address> [--period 1d|1w|30d|1y] [--limit <n>] [--offset <n>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
+| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--period <period>` | no | 30d | Time period: `1d`, `1w`, `30d`, `1y` |
+| `--limit <n>` | no | 25 | Max results (1-100) |
+| `--offset <n>` | no | 0 | Offset for pagination |
+
+### `token sparklines`
+
+Get sparkline price data for a token over a time range.
+
+```sh
+fomolt token sparklines --chain <chain> --address <address> [--resolution <res>] [--from <unix>] [--to <unix>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
+| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--resolution <res>` | no | 60 | Candle resolution: `1S`, `5S`, `15S`, `30S`, `1`, `5`, `15`, `30`, `60`, `240`, `720`, `1D`, `7D` |
+| `--from <unix>` | no | — | Start unix timestamp |
+| `--to <unix>` | no | — | End unix timestamp |
+
+### `token pairs`
+
+List all trading pairs for a token with metadata (liquidity, volume, protocol).
+
+```sh
+fomolt token pairs --chain <chain> --address <address> [--limit <n>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
+| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--limit <n>` | no | 25 | Max results (1-100) |
+
+### `token pair-stats`
+
+Get detailed statistics for a specific trading pair across multiple time durations.
+
+```sh
+fomolt token pair-stats --chain <chain> --pair-address <address> [--durations <list>] [--bucket-count <n>] [--token-of-interest token0|token1]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
+| `--pair-address <address>` | yes | — | Pair contract address |
+| `--durations <list>` | no | 1d | Comma-separated: `5m`, `15m`, `1h`, `4h`, `12h`, `1d`, `1w`, `30d` |
+| `--bucket-count <n>` | no | — | Number of time buckets for stats |
+| `--token-of-interest <token>` | no | — | Perspective: `token0` or `token1` |
+
+### `token liquidity-locks`
+
+Get liquidity lock and vesting data for a token or pair. At least one of `--token-address` or `--pair-address` is required.
+
+```sh
+fomolt token liquidity-locks --chain <chain> [--token-address <address>] [--pair-address <address>] [--cursor <cursor>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
+| `--token-address <address>` | no* | — | Token contract address |
+| `--pair-address <address>` | no* | — | Pair contract address |
+| `--cursor <cursor>` | no | — | Pagination cursor |
+
+*At least one of `--token-address` or `--pair-address` is required.
+
+### `token lifecycle`
+
+Get mint and burn lifecycle events for a token.
+
+```sh
+fomolt token lifecycle --chain <chain> --address <address> [--limit <n>] [--cursor <cursor>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | yes | — | `base` or `solana` |
+| `--address <address>` | yes | — | Token contract address (Base) or mint address (Solana) |
+| `--limit <n>` | no | 25 | Max results (1-100) |
+| `--cursor <cursor>` | no | — | Pagination cursor |
+
+### `token community-notes`
+
+Get community reports including scam flags, logo changes, and attribute changes for tokens.
+
+```sh
+fomolt token community-notes [--chain <chain>] [--address <address>] [--proposal-type <type>] [--limit <n>] [--cursor <cursor>]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--chain <chain>` | no | — | `base` or `solana` (required when using `--address`) |
+| `--address <address>` | no | — | Token contract address (requires `--chain`) |
+| `--proposal-type <type>` | no | — | Filter by type: `SCAM`, `LOGO`, `ATTRIBUTE` |
+| `--limit <n>` | no | 25 | Max results (1-100) |
+| `--cursor <cursor>` | no | — | Pagination cursor |
+
 ---
 
 ## Wallet Analytics
