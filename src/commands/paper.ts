@@ -93,12 +93,12 @@ export function paperCommands(getContext: () => CmdContext): Command {
 
   cmd
     .command("price")
-    .description("Look up token price by address")
-    .requiredOption("--chain <chain>", "Chain: base or solana")
-    .requiredOption("--token <address>", "Token address")
-    .action(async (opts) => {
-      const chain = validateChain(opts.chain);
-      return handlePaperPrice({ token: validateAddress(opts.token, chain), chain }, getContext());
+    .description("[MOVED] Use: fomolt token price --chain <chain> --token <address> --market paper")
+    .allowUnknownOption()
+    .allowExcessArguments()
+    .action(async () => {
+      error("This command has moved. Use: fomolt token price --chain <chain> --token <address> --market paper", "COMMAND_MOVED");
+      process.exit(1);
     });
 
   cmd

@@ -167,6 +167,16 @@ export function validateWalletMode(value: string): WalletMode {
   return value as WalletMode;
 }
 
+export type Market = "paper" | "live";
+
+export function validateMarket(value: string): Market {
+  if (value !== "paper" && value !== "live") {
+    error(`--market must be "paper" or "live", got "${value}"`, "INVALID_MARKET");
+    process.exit(1);
+  }
+  return value;
+}
+
 export function validateQuery(value: string): string {
   if (value.length === 0 || value.length > 500) {
     error(

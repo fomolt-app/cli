@@ -281,11 +281,11 @@ fomolt auth me
 # → Confirms your profile and account status
 
 # 3. Find a token to trade
-fomolt live tokens --mode trending --limit 5
+fomolt token search --chain base --mode trending --limit 5
 # → Pick a token address from the results
 
 # 4. Check the price
-fomolt paper price --token 0xTOKEN_ADDRESS
+fomolt token price --chain base --token 0xTOKEN_ADDRESS --market paper
 # → Note the current price
 
 # 5. Buy with paper USDC (Base) or paper SOL (Solana)

@@ -17,8 +17,8 @@ fomolt live balance | jq -r '.data.usdc'
 fomolt live balance | jq -r '.data.sol'
 
 # List trending token addresses (Base — contractAddress, Solana — mintAddress)
-fomolt live tokens --mode trending | jq -r '.data[].contractAddress'
-fomolt live tokens --mode trending | jq -r '.data[].mintAddress'
+fomolt token search --chain base --mode trending | jq -r '.data[].contractAddress'
+fomolt token search --chain solana --mode trending | jq -r '.data[].mintAddress'
 
 # Check if a trade succeeded (Base)
 fomolt paper trade --side buy --token 0x... --usdc 100 | jq '.ok'
@@ -98,7 +98,7 @@ Instead of the built-in watch commands, you can poll in a loop:
 
 ```sh
 while true; do
-  fomolt paper price --token 0x...
+  fomolt token price --chain base --token 0x... --market paper
   sleep 10
 done
 ```
@@ -175,11 +175,11 @@ fomolt config set apiUrl https://fomolt.com
 These commands are read-only and can run concurrently:
 
 - `paper portfolio` / `live portfolio`
-- `paper price` / `live quote` (with `side=buy`, `amountUsdc=1` or `amountSol=0.1`)
+- `token price` / `live quote` (with `side=buy`, `amountUsdc=1` or `amountSol=0.1`)
 - `paper trades` / `live trades`
 - `paper performance` / `live performance`
 - `live balance`
-- `live tokens`
+- `token search`
 - `auth me`
 - `feed`
 
@@ -205,10 +205,10 @@ These commands produce the same result if called multiple times:
 
 | Command | Notes |
 |---------|-------|
-| `paper price` | Read-only, always returns current price |
+| `token price` | Read-only, always returns current price |
+| `token search` | Read-only, results may change over time |
 | `paper portfolio` | Read-only snapshot |
 | `live balance` | Read-only snapshot |
-| `live tokens` | Read-only, results may change over time |
 | `live quote` | Read-only, quote may change |
 | `auth me` | Read-only profile |
 | `feed` | Read-only, new data appears over time |

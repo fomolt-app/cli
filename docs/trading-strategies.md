@@ -12,7 +12,7 @@ Watch a token's price, detect a trend, enter a position, and exit when the trend
 
 ```sh
 # 1. Find trending tokens
-fomolt live tokens --mode trending --limit 10
+fomolt token search --chain base --mode trending --limit 10
 
 # 2. Pick a token and start watching its price
 fomolt watch price --token 0xTOKEN --market paper --interval 10
@@ -96,16 +96,16 @@ Find new tokens, evaluate them, and take small positions.
 
 ```sh
 # 1. Discover trending tokens
-fomolt live tokens --mode trending --limit 20
+fomolt token search --chain base --mode trending --limit 20
 
 # 2. Or find brand new tokens
-fomolt live tokens --mode new --limit 20
+fomolt token search --chain base --mode new --limit 20
 
 # 3. Or search by name/symbol
-fomolt live tokens --mode search --term "brett" --limit 10
+fomolt token search --chain base --mode search --term "brett" --limit 10
 
 # 4. Check price for interesting tokens
-fomolt paper price --token 0xCANDIDATE
+fomolt token price --chain base --token 0xCANDIDATE --market paper
 
 # 5. Take a small paper position to track it
 fomolt paper trade --side buy --token 0xCANDIDATE --usdc 100 --note "discovery: trending token"
@@ -117,7 +117,7 @@ fomolt watch price --token 0xCANDIDATE --market paper --interval 30
 ### Decision Logic
 
 ```
-candidates = fomolt live tokens --mode trending
+candidates = fomolt token search --chain base --mode trending
 for each token in candidates.data:
   # Filter criteria (from token metadata):
   # - Has sufficient liquidity
@@ -146,16 +146,16 @@ Filter and screen tokens by multiple criteria to find candidates that match your
 
 ```sh
 # 1. Find micro-cap tokens with decent liquidity and holders
-fomolt live tokens --chain solana --mode new --min-liquidity 5000 --min-holders 50 --max-market-cap 500000 --limit 10
+fomolt token search --chain solana --mode new --min-liquidity 5000 --min-holders 50 --max-market-cap 500000 --limit 10
 
 # 2. Find established tokens sorted by volume
-fomolt live tokens --chain solana --mode trending --min-market-cap 100000 --sort volume --order desc --limit 10
+fomolt token search --chain solana --mode trending --min-market-cap 100000 --sort volume --order desc --limit 10
 
 # 3. Find tokens created in the last hour
-fomolt live tokens --chain solana --mode new --max-age 60 --min-liquidity 1000 --limit 10
+fomolt token search --chain solana --mode new --max-age 60 --min-liquidity 1000 --limit 10
 
 # 4. Get detailed info on a candidate (metadata, holders, security flags)
-fomolt live token-info --chain solana --address <mint-address>
+fomolt token info --chain solana --address <mint-address>
 # → Check securityFlags, mintAuthority, freezeAuthority, holderCount, topHolders
 
 # 5. Continuously watch for new tokens meeting your criteria
@@ -167,10 +167,10 @@ fomolt watch tokens --chain solana --interval 10 --min-liquidity 5000 --min-hold
 
 ```
 # Screen for quality tokens
-candidates = fomolt live tokens --chain solana --mode new --min-liquidity 5000 --min-holders 50
+candidates = fomolt token search --chain solana --mode new --min-liquidity 5000 --min-holders 50
 
 for each token in candidates.data:
-  info = fomolt live token-info --chain solana --address token.mintAddress
+  info = fomolt token info --chain solana --address token.mintAddress
 
   # Security checks
   if "mintable" in info.securityFlags:

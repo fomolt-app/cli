@@ -636,7 +636,21 @@ describe("hintCLI injection", () => {
     );
 
     const output = JSON.parse(stdout.join(""));
-    expect(output.data.hintCLI).toBe("Get details: fomolt live token-info --chain base --address 0xabc");
+    expect(output.data.hintCLI).toBe("Get details: fomolt token info --chain base --address 0xabc");
+  });
+
+  test("live tokens hint uses custom tokenInfoCmd when provided", async () => {
+    mockApiResponse({ tokens: [{ contractAddress: "0xabc", symbol: "TEST" }], count: 1 });
+
+    const { handleLiveTokens } = await import("../../src/commands/live");
+    await handleLiveTokens(
+      { chain: "base" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" },
+      { tokenInfoCmd: "fomolt custom-cmd" }
+    );
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.data.hintCLI).toBe("Get details: fomolt custom-cmd --chain base --address 0xabc");
   });
 
   test("live tokens no hintCLI when results empty", async () => {
@@ -765,5 +779,94 @@ describe("validateSort and validateOrder", () => {
     const out = JSON.parse(stderr.join(""));
     expect(out.error).toContain("--order");
     expect(out.code).toBe("INVALID_ORDER");
+  });
+});
+
+// --- Deprecation stubs ---
+
+describe("COMMAND_MOVED stubs", () => {
+  test("live tokens stub exits with COMMAND_MOVED", async () => {
+    const { liveCommands } = await import("../../src/commands/live");
+    const cmd = liveCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
+    const tokensCmd = cmd.commands.find((c: any) => c.name() === "tokens");
+    expect(tokensCmd).toBeDefined();
+    try {
+      await tokensCmd!.parseAsync(["tokens"], { from: "user" });
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.code).toBe("COMMAND_MOVED");
+    expect(out.error).toContain("fomolt token search");
+  });
+
+  test("live token-info stub exits with COMMAND_MOVED", async () => {
+    const { liveCommands } = await import("../../src/commands/live");
+    const cmd = liveCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
+    const sub = cmd.commands.find((c: any) => c.name() === "token-info");
+    expect(sub).toBeDefined();
+    try {
+      await sub!.parseAsync(["token-info"], { from: "user" });
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.code).toBe("COMMAND_MOVED");
+    expect(out.error).toContain("fomolt token info");
+  });
+
+  test("live price stub exits with COMMAND_MOVED", async () => {
+    const { liveCommands } = await import("../../src/commands/live");
+    const cmd = liveCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
+    const sub = cmd.commands.find((c: any) => c.name() === "price");
+    expect(sub).toBeDefined();
+    try {
+      await sub!.parseAsync(["price"], { from: "user" });
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.code).toBe("COMMAND_MOVED");
+    expect(out.error).toContain("fomolt token price");
+  });
+
+  test("live wallet stub exits with COMMAND_MOVED", async () => {
+    const { liveCommands } = await import("../../src/commands/live");
+    const cmd = liveCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
+    const sub = cmd.commands.find((c: any) => c.name() === "wallet");
+    expect(sub).toBeDefined();
+    try {
+      await sub!.parseAsync(["wallet"], { from: "user" });
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.code).toBe("COMMAND_MOVED");
+    expect(out.error).toContain("fomolt wallet");
+  });
+
+  test("live top-wallets stub exits with COMMAND_MOVED", async () => {
+    const { liveCommands } = await import("../../src/commands/live");
+    const cmd = liveCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
+    const sub = cmd.commands.find((c: any) => c.name() === "top-wallets");
+    expect(sub).toBeDefined();
+    try {
+      await sub!.parseAsync(["top-wallets"], { from: "user" });
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.code).toBe("COMMAND_MOVED");
+    expect(out.error).toContain("fomolt wallet top");
   });
 });

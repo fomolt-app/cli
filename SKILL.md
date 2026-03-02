@@ -38,7 +38,9 @@ Always check `ok` first. On success, read `data`. On error, read `code` to decid
 | Code | Meaning | What to Do |
 |------|---------|------------|
 | `NO_CREDENTIALS` | No API key configured | Run `fomolt auth register` or `fomolt auth import` |
+| `COMMAND_MOVED` | Command relocated to new namespace | Use the new command shown in the error message |
 | `INVALID_CHAIN` | `--chain` not "base" or "solana" | Use `--chain base` or `--chain solana` |
+| `INVALID_MARKET` | `--market` not "paper" or "live" | Use `--market paper` or `--market live` |
 | `INVALID_ADDRESS` | Address format wrong for chain | Base: `0x` + 40 hex chars. Solana: 32-44 base58 chars |
 | `INVALID_AMOUNT` | Numeric value out of range | Check the flag range in the error message |
 | `INVALID_SLIPPAGE` | `--slippage` not 0-50 | Use a value like `5` (percent) |
@@ -72,8 +74,8 @@ Always check `ok` first. On success, read `data`. On error, read `code` to decid
 Some commands include a `hintCLI` field in the success response suggesting a logical next command. When present, run the suggested command yourself rather than displaying it to the user.
 
 Commands that include `hintCLI`:
-- `live tokens` → suggests `live token-info` for the first result
-- `live token-info` → suggests `live quote` for the token
+- `token search` → suggests `token info` for the first result
+- `token info` → suggests `live quote` for the token
 - `live quote` → suggests `live trade` matching the quote flags
 - `live trade` → suggests `live portfolio`
 - `live withdraw` → suggests `live balance`
@@ -143,9 +145,6 @@ These work on any command:
 Simulated trading with 10,000 USDC on Base. Use to test strategies with zero risk.
 
 ```sh
-# Check a token's price
-fomolt paper price --chain base --token <0x-address>
-
 # Buy tokens (specify USDC to spend)
 fomolt paper trade --chain base --side buy --token <0x-address> --usdc <amount> [--note <text>]
 
@@ -172,9 +171,6 @@ fomolt paper pnl-image --chain base --token <0x-address>
 Simulated trading with 50 SOL on Solana. Trades any token with liquidity on supported DEXes (pump.fun bonding curve, PumpSwap AMM, Raydium, Orca, Meteora).
 
 ```sh
-# Check a token's price
-fomolt paper price --chain solana --token <mint-address>
-
 # Buy tokens (specify SOL to spend)
 fomolt paper trade --chain solana --side buy --token <mint-address> --sol <amount> [--note <text>]
 
@@ -193,20 +189,67 @@ fomolt paper performance --chain solana
 
 **Buy requires `--sol`. Sell requires `--quantity`.** These are not interchangeable.
 
+### Token Data (Both Chains)
+
+Read-only token data and analytics. Works independently of paper/live trading mode.
+
+```sh
+# Discover tradeable tokens (with screening filters)
+fomolt token search --chain base [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
+fomolt token search --chain solana [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
+
+# Get detailed token overview (price, market cap, volume, holders)
+fomolt token info --chain base --address <0x-address>
+fomolt token info --chain solana --address <mint-address>
+
+# Look up the current price of a token (default: live prices)
+fomolt token price --chain base --token <0x-address> [--market paper|live]
+fomolt token price --chain solana --token <mint-address> [--market paper|live]
+
+# Token holders — top holders with balances and first-held timestamps
+fomolt token holders --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
+fomolt token holders --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
+
+# Token trade events — recent swaps for a token
+fomolt token trades --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
+fomolt token trades --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
+
+# Token wallets — find top wallets trading a specific token
+fomolt token wallets --chain base --address <0x-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+fomolt token wallets --chain solana --address <mint-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+```
+
+Sort fields for `token search`: `trending`, `volume`, `market_cap`, `holders`, `created`. Order: `asc` or `desc`.
+
+Defaults: `--market live`, `--sort pnl`, `--period 30d`, `--limit 25` (holders/trades), `--limit 20` (wallets/search).
+
+### Wallet Analytics (Both Chains)
+
+Read-only wallet intelligence. Works independently of paper/live trading mode.
+
+```sh
+# Analyze any on-chain wallet
+fomolt wallet --chain base --address <0x-address> [--mode stats|trades|chart|balances]
+fomolt wallet --chain solana --address <solana-address> [--mode stats|trades|chart|balances]
+
+# Wallet mode options:
+#   stats    — PnL, volume, win rate across 1d/1w/30d/1y (default)
+#   trades   — wallet's swap history [--limit] [--cursor] [--token <address>]
+#   chart    — time-series volume/PnL [--resolution 1D] [--start <unix>] [--end <unix>]
+#   balances — token holdings with USD values [--limit] [--cursor]
+
+# Discover top-performing wallets on a chain
+fomolt wallet top --chain base [--sort pnl|volume|win-rate] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+fomolt wallet top --chain solana [--sort pnl|volume|win-rate] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
+```
+
+Defaults: `--mode stats`, `--sort pnl`, `--period 30d`, `--limit 20` (top wallets), `--limit 25` (wallet trades/balances).
+
 ### Live Trading — Base (USDC)
 
 Real on-chain swaps on Base through your smart account. Max 500 USDC per buy trade.
 
 ```sh
-# Discover tokens (with screening filters)
-fomolt live tokens --chain base [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
-
-# Get detailed token overview (price, market cap, volume, holders)
-fomolt live token-info --chain base --address <0x-address>
-
-# Check a token's live price
-fomolt live price --chain base --token <0x-address>
-
 # Check balances (USDC and ETH)
 fomolt live balance --chain base
 
@@ -239,52 +282,11 @@ fomolt live session-key --chain base
 
 Default slippage is 5%. Token addresses are 0x-prefixed contract addresses on Base.
 
-### Token & Wallet Analytics (Both Chains)
-
-On-chain analytics powered by Codex. All commands work with `--chain base` or `--chain solana`.
-
-```sh
-# Token holders — top holders with balances and first-held timestamps
-fomolt live holders --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
-fomolt live holders --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
-
-# Token trade events — recent swaps for a token
-fomolt live token-trades --chain base --address <0x-address> [--limit <1-100>] [--cursor <cursor>]
-fomolt live token-trades --chain solana --address <mint-address> [--limit <1-100>] [--cursor <cursor>]
-
-# Wallet intelligence — analyze any on-chain wallet
-fomolt live wallet --chain base --address <0x-address> [--mode stats|trades|chart|balances]
-fomolt live wallet --chain solana --address <solana-address> [--mode stats|trades|chart|balances]
-
-# Wallet mode options:
-#   stats    — PnL, volume, win rate across 1d/1w/30d/1y (default)
-#   trades   — wallet's swap history [--limit] [--cursor] [--token <address>]
-#   chart    — time-series volume/PnL [--resolution 1D] [--start <unix>] [--end <unix>]
-#   balances — token holdings with USD values [--limit] [--cursor]
-
-# Top wallets — discover profitable wallets on a chain
-fomolt live top-wallets --chain base [--sort pnl|volume|win-rate] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
-
-# Token wallets — find top wallets trading a specific token
-fomolt live token-wallets --chain base --address <0x-address> [--sort pnl|volume] [--period 1d|1w|30d|1y] [--limit <1-100>] [--offset <n>]
-```
-
-Defaults: `--sort pnl`, `--period 30d`, `--limit 20` (top-wallets/token-wallets), `--limit 25` (holders/token-trades), `--mode stats` (wallet).
-
 ### Live Trading — Solana (SOL)
 
 Real on-chain swaps on Solana via Trade Router. Users pay their own gas in SOL. Max 10 SOL per buy trade.
 
 ```sh
-# Discover tokens (with screening filters)
-fomolt live tokens --chain solana [--mode trending|search|new] [--term <text>] [--address <address>] [--limit <1-100>] [--min-liquidity <amount>] [--min-volume-1h <amount>] [--min-holders <count>] [--min-market-cap <amount>] [--max-market-cap <amount>] [--min-age <minutes>] [--max-age <minutes>] [--sort <field>] [--order <dir>]
-
-# Get detailed token info (metadata, price, holders, security)
-fomolt live token-info --chain solana --address <mint-address>
-
-# Check a token's live price
-fomolt live price --chain solana --token <mint-address>
-
 # Check SOL balance
 fomolt live balance --chain solana
 
@@ -538,7 +540,7 @@ Paper trades don't need quoting — they execute at the displayed price.
 ### Find and Buy a Trending Token — Base (Paper)
 
 ```sh
-fomolt live tokens --chain base --mode trending --limit 5
+fomolt token search --chain base --mode trending --limit 5
 # → Pick a contractAddress from data
 
 fomolt paper trade --chain base --side buy --token 0xPICKED_ADDRESS --usdc 500
@@ -552,7 +554,7 @@ fomolt paper portfolio --chain base
 
 ```sh
 # Get price for a Solana token
-fomolt paper price --chain solana --token <mint-address>
+fomolt token price --chain solana --token <mint-address>
 
 # Buy with SOL
 fomolt paper trade --chain solana --side buy --token <mint-address> --sol 1
@@ -645,6 +647,6 @@ Everything else requires auth.
 
 ## Idempotency
 
-**Safe to retry (read-only):** `price`, `portfolio`, `balance`, `tokens`, `token-info`, `quote`, `trades`, `performance`, `holders`, `token-trades`, `wallet`, `top-wallets`, `token-wallets`, `feed`, `ohlcv`, `me`, `achievements`, `leaderboard`, `twitter search`, `twitter user`, `twitter tweets`, `twitter tweet`, `twitter trends`, `twitter thread`, `twitter quotes`, `twitter replies`, `twitter user-search`, `twitter followers`, `twitter following`, `twitter mentions`, `twitter usage`
+**Safe to retry (read-only):** `token search`, `token info`, `token price`, `token holders`, `token trades`, `token wallets`, `wallet`, `wallet top`, `portfolio`, `balance`, `quote`, `trades`, `performance`, `feed`, `ohlcv`, `me`, `achievements`, `leaderboard`, `twitter search`, `twitter user`, `twitter tweets`, `twitter tweet`, `twitter trends`, `twitter thread`, `twitter quotes`, `twitter replies`, `twitter user-search`, `twitter followers`, `twitter following`, `twitter mentions`, `twitter usage`
 
 **NOT safe to retry blindly:** `trade` (executes another trade), `withdraw` (sends funds again). If a trade command fails, check `live trades --chain base --sort desc --limit 1` to see if it actually went through before retrying.
