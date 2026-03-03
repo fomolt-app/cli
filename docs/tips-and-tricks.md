@@ -146,20 +146,23 @@ done
 
 ### Staging Environment
 
-Point to a different API URL:
+Point to a different API URL. The CLI enforces domain pinning — only `*.fomolt.com` and `localhost` are trusted (HTTPS required). This prevents credential theft via `--api-url` to malicious servers.
 
 ```sh
-# Per-command override
+# Per-command override (must be a *.fomolt.com domain)
 fomolt --api-url https://staging.fomolt.com paper portfolio
 
 # Persistent override
 fomolt config set apiUrl https://staging.fomolt.com
 
+# Use a non-fomolt domain (requires --force)
+fomolt config set apiUrl https://custom-server.com --force
+
 # Check current config
 fomolt config list
 
 # Reset to default (remove the override)
-fomolt config set apiUrl https://fomolt.com
+fomolt config reset apiUrl
 ```
 
 ### API URL Resolution Order
@@ -221,6 +224,8 @@ These commands produce the same result if called multiple times:
 | `twitter followers` | Read-only, follower list |
 | `twitter following` | Read-only, following list |
 | `twitter mentions` | Read-only, mention tweets |
+| `token security` | Read-only security audit |
+| `token metadata` | Read-only social metadata |
 | `config get/list` | Read-only |
 
 ### NOT Idempotent

@@ -26,12 +26,37 @@ afterEach(() => {
   process.stdout.write = originalWrite;
 });
 
-test("config set writes value and config get reads it", async () => {
+test("config set writes trusted URL and config get reads it", async () => {
   const { handleConfigSet, handleConfigGet } = await import(
     "../../src/commands/config"
   );
 
-  await handleConfigSet("apiUrl", "https://custom.com", testDir);
+  await handleConfigSet("apiUrl", "https://staging.fomolt.com", testDir);
+  const output1 = JSON.parse(stdout.join(""));
+  expect(output1.ok).toBe(true);
+
+  stdout = [];
+  await handleConfigGet("apiUrl", testDir);
+  const output2 = JSON.parse(stdout.join(""));
+  expect(output2).toEqual({
+    ok: true,
+    data: { key: "apiUrl", value: "https://staging.fomolt.com" },
+  });
+});
+
+test("config set rejects untrusted URL without --force", async () => {
+  const { handleConfigSet } = await import("../../src/commands/config");
+  const { validateConfigValue } = await import("../../src/config");
+  const err = validateConfigValue("apiUrl", "https://evil.com");
+  expect(err).toContain("not a trusted fomolt domain");
+});
+
+test("config set accepts untrusted URL with --force", async () => {
+  const { handleConfigSet, handleConfigGet } = await import(
+    "../../src/commands/config"
+  );
+
+  await handleConfigSet("apiUrl", "https://custom.com", testDir, true);
   const output1 = JSON.parse(stdout.join(""));
   expect(output1.ok).toBe(true);
 
@@ -42,6 +67,18 @@ test("config set writes value and config get reads it", async () => {
     ok: true,
     data: { key: "apiUrl", value: "https://custom.com" },
   });
+});
+
+test("config set rejects http URL for non-local domain", async () => {
+  const { validateConfigValue } = await import("../../src/config");
+  const err = validateConfigValue("apiUrl", "http://fomolt.com");
+  expect(err).toContain("HTTPS");
+});
+
+test("config set allows http for localhost", async () => {
+  const { validateConfigValue } = await import("../../src/config");
+  const err = validateConfigValue("apiUrl", "http://localhost:3000");
+  expect(err).toBeNull();
 });
 
 test("config list shows all config", async () => {

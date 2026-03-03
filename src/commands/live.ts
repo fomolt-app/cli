@@ -540,11 +540,16 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .requiredOption("--currency <currency>", "Asset to withdraw (USDC, ETH, SOL, or token address)")
     .requiredOption("--amount <amount>", 'Amount to withdraw (or "max" for full balance)')
     .requiredOption("--to <address>", "Destination wallet address")
+    .option("--confirm", "Confirm the withdrawal (required)")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       validateAddress(opts.to, chain, "--to");
       if (opts.amount.toLowerCase() !== "max") {
         validatePositiveNumber(opts.amount, "--amount");
+      }
+      if (!opts.confirm) {
+        error(`Withdraw ${opts.amount} ${opts.currency} to ${opts.to} on ${chain}. Re-run with --confirm to execute.`, "CONFIRMATION_REQUIRED");
+        process.exit(1);
       }
       return handleLiveWithdraw({ ...opts, chain }, getContext());
     });

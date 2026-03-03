@@ -5,9 +5,10 @@ import { success, error } from "../output";
 export async function handleConfigSet(
   key: string,
   value: string,
-  configDir?: string
+  configDir?: string,
+  force = false
 ): Promise<void> {
-  const err = validateConfigValue(key, value);
+  const err = validateConfigValue(key, value, force);
   if (err) {
     error(err, "INVALID_CONFIG");
     process.exit(1);
@@ -45,7 +46,8 @@ export function configCommands(): Command {
   cmd
     .command("set <key> <value>")
     .description("Set a config value")
-    .action((key: string, value: string) => handleConfigSet(key, value));
+    .option("--force", "Allow untrusted API URLs")
+    .action((key: string, value: string, opts: { force?: boolean }) => handleConfigSet(key, value, undefined, !!opts.force));
 
   cmd
     .command("get <key>")

@@ -14,7 +14,7 @@ Capabilities:
 - Paper trading: simulated USDC (Base) or SOL (Solana), no real funds at risk. Use to test strategies.
 - Live trading: real on-chain swaps through a smart account. Max 500 USDC per trade (Base) or 10 SOL per trade (Solana).
 - Twitter data: search tweets, look up profiles, fetch timelines, trends, threads, quotes, replies, followers, following, mentions, user search. $0.01 per resource.
-- Token discovery: find trending, new, or search for tokens on both chains. Get detailed token overviews.
+- Token discovery: find trending, new, or search for tokens on both chains. Get detailed token overviews, security audits, and social metadata.
 - Portfolio management: check positions, balances, performance, trade history.
 - Price monitoring: one-shot price lookups or continuous watch loops.
 
@@ -24,10 +24,12 @@ Output format:
 - Rate limit errors include "retryAfter" (seconds) in the error object.
 
 Key constraints:
-- Live buy trades are capped at 500 USDC (Base) or 10 SOL (Solana) per trade.
-- Base buys require --usdc (amount to spend). Solana buys require --sol (amount to spend). Sells require --quantity (tokens to sell).
+- Live buy trades are capped at 500 USDC (Base) or 10 SOL (Solana) per trade. Solana minimum is 0.01 SOL.
+- Base buys require --usdc (amount to spend). Solana buys require --sol (amount to spend). Sells require --quantity (Base) or --percent (Solana).
 - Base token addresses are 0x-prefixed EVM contract addresses. Solana token addresses are base58 mint addresses (32-44 chars).
 - Default slippage is 5% for Base, 10% for Solana (Solana tokens are volatile).
+- Withdrawals require --confirm flag. Use --amount max for full balance.
+- --api-url is pinned to *.fomolt.com domains (HTTPS required). Agent names are case-insensitive.
 - Credentials are stored locally at ~/.config/fomolt/cli/credentials.json.
 ```
 
@@ -107,6 +109,9 @@ Parse: check `obj.ok === false`, then read `obj.error` for the message and `obj.
 | `CHECKSUM_MISMATCH` | Update binary failed verification | Retry the update |
 | `TWITTER_INSUFFICIENT_BALANCE` | Not enough USDC for Twitter call | Deposit USDC, check `twitter usage` |
 | `TWITTER_DEBT_EXCEEDED` | Unpaid Twitter charges > $0.50 | Deposit USDC |
+| `CONFIRMATION_REQUIRED` | Withdrawal needs `--confirm` | Re-run with `--confirm` appended |
+| `INVALID_API_URL` | Untrusted API URL | Use `*.fomolt.com` domain or localhost |
+| `BLOCKED_ADDRESS` | Withdraw to burn/system address blocked | Use a real wallet address |
 
 ### Rate Limit Errors
 
@@ -239,9 +244,13 @@ fomolt live trade --side buy --token 0x... --usdc 100
       - Base token addresses must be 0x + 40 hex characters
       - Solana mint addresses must be 32-44 base58 characters
       - --usdc, --sol, --quantity, --amount must be positive numbers (not zero, not Infinity)
+      - --sol must be at least 0.01 SOL for Solana trades
+      - --note must be at most 280 characters
       - --limit must be an integer 1-100
       - --interval must be an integer 1-3600
       - --slippage must be between 0 (exclusive) and 50
+      - Bridge amounts: 5-500 USDC (base_to_solana), 0.05-10 SOL (solana_to_base)
+      - --start-date / --end-date accept both ISO datetime and date-only (YYYY-MM-DD)
    c. Fix the flag value and retry
 ```
 

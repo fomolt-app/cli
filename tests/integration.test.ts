@@ -72,7 +72,7 @@ test("auth me without credentials outputs JSON error", async () => {
   const tmpHome = `${require("os").tmpdir()}/fomolt-int-test-${Date.now()}`;
   require("fs").mkdirSync(tmpHome, { recursive: true });
   const proc = Bun.spawn(
-    ["bun", "run", "index.ts", "auth", "me", "--api-url", "https://fomolt.test"],
+    ["bun", "run", "index.ts", "auth", "me", "--api-url", "https://test.fomolt.com"],
     { stdout: "pipe", stderr: "pipe", env: { ...process.env, HOME: tmpHome } }
   );
   const stderr = await new Response(proc.stderr).text();

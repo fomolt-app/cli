@@ -161,19 +161,52 @@ export async function listAgents(dir = DEFAULT_DIR): Promise<AgentInfo[]> {
 
 const KNOWN_CONFIG_KEYS = new Set(["apiUrl"]);
 
-export function validateConfigValue(key: string, value: string): string | null {
+const TRUSTED_API_DOMAINS = new Set([
+  "fomolt.com",
+  "www.fomolt.com",
+  "staging.fomolt.com",
+  "localhost",
+  "127.0.0.1",
+]);
+
+export function isTrustedApiUrl(urlStr: string): boolean {
+  try {
+    const host = new URL(urlStr).hostname;
+    if (TRUSTED_API_DOMAINS.has(host)) return true;
+    if (host.endsWith(".fomolt.com")) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export function validateApiUrl(value: string, force = false): string | null {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return `apiUrl must be a valid URL, got "${value}"`;
+  }
+  // Allow http only for localhost/127.0.0.1
+  if (url.protocol !== "https:") {
+    if (url.protocol === "http:" && (url.hostname === "localhost" || url.hostname === "127.0.0.1")) {
+      // ok for local dev
+    } else {
+      return "apiUrl must use HTTPS. Your API key is sent as a Bearer token — HTTP would expose it in plaintext.";
+    }
+  }
+  if (!force && !isTrustedApiUrl(value)) {
+    return `"${url.hostname}" is not a trusted fomolt domain. All CLI commands send your API key to this URL. Use --force to override, or use a *.fomolt.com domain.`;
+  }
+  return null;
+}
+
+export function validateConfigValue(key: string, value: string, force = false): string | null {
   if (!KNOWN_CONFIG_KEYS.has(key)) {
     return `Unknown config key "${key}". Valid keys: ${[...KNOWN_CONFIG_KEYS].join(", ")}`;
   }
   if (key === "apiUrl") {
-    try {
-      const url = new URL(value);
-      if (url.protocol !== "https:" && url.protocol !== "http:") {
-        return "apiUrl must be an HTTP(S) URL";
-      }
-    } catch {
-      return `apiUrl must be a valid URL, got "${value}"`;
-    }
+    return validateApiUrl(value, force);
   }
   return null;
 }

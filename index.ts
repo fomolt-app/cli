@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { ApiError } from "./src/client";
-import { loadConfig, loadCredentialsStore } from "./src/config";
+import { loadConfig, loadCredentialsStore, validateApiUrl } from "./src/config";
 import { error } from "./src/output";
 import type { CmdContext } from "./src/context";
 import { authCommands } from "./src/commands/auth";
@@ -131,8 +131,17 @@ async function main() {
 
   function getContext(): CmdContext {
     const opts = program.opts();
+    const apiUrl = opts.apiUrl ?? storedConfig.apiUrl ?? "https://fomolt.com";
+    // Validate API URL at runtime — reject untrusted domains to prevent credential theft
+    if (opts.apiUrl) {
+      const urlErr = validateApiUrl(opts.apiUrl);
+      if (urlErr) {
+        error(urlErr, "INVALID_API_URL");
+        process.exit(1);
+      }
+    }
     return {
-      apiUrl: opts.apiUrl ?? storedConfig.apiUrl ?? "https://fomolt.com",
+      apiUrl,
       apiKey: stdinApiKey ?? (opts.apiKey !== "-" ? opts.apiKey : undefined),
       agent: opts.agent,
     };
