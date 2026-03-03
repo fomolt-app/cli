@@ -288,7 +288,7 @@ export function sessionCommands(getContext: () => CmdContext): Command {
 
   const createCmd = new Command("create")
     .description("Create a new draft session")
-    .requiredOption("--duration <minutes>", "Session duration in minutes (default: 60, range: 60–300)")
+    .requiredOption("--duration <minutes>", "Session duration in minutes (default: 60, range: 5–300)")
     .option("--llm-provider <provider>", "LLM provider: chatjimmy (default), openai, anthropic")
     .option("--llm-model <model>", "LLM model name (default: llama3.1-8B)")
     .option("--llm-api-key <key>", "BYOK API key (required for openai/anthropic)")
@@ -314,7 +314,7 @@ Examples:
       --watchlist 0xabc...,0xdef...
 `)
     .action(async (opts) => {
-      validateInt(opts.duration, "--duration", 60, 300);
+      validateInt(opts.duration, "--duration", 5, 300);
       validateConfigOpts(opts);
       return handleSessionCreate(opts, getContext());
     });
@@ -365,12 +365,12 @@ Examples:
     .requiredOption("--id <sessionId>", "Session ID")
     .option("--trader-md <text>", "Update trading strategy (inline text)")
     .option("--trader-md-file <path>", "Update trading strategy (read from file)")
-    .option("--duration <minutes>", "Update duration (60-300)")
+    .option("--duration <minutes>", "Update duration (5-300)")
     .option("--llm-provider <provider>", "Update LLM provider")
     .option("--llm-model <model>", "Update LLM model")
     .option("--llm-api-key <key>", "Update BYOK key")
     .action(async (opts) => {
-      if (opts.duration) validateInt(opts.duration, "--duration", 60, 300);
+      if (opts.duration) validateInt(opts.duration, "--duration", 5, 300);
       validateConfigOpts(opts);
       return handleSessionEdit(opts, getContext());
     });

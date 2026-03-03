@@ -554,20 +554,20 @@ describe("Base-only commands error on Solana", () => {
   test("requireBase passes for base", async () => {
     const { requireBase } = await import("../../src/commands/live");
     // Should not throw
-    requireBase("base", "session-key");
+    requireBase("base", "withdraw");
   });
 
-  test("requireBase rejects solana for session-key", async () => {
+  test("requireBase rejects solana for withdraw", async () => {
     const { requireBase } = await import("../../src/commands/live");
     try {
-      requireBase("solana", "session-key");
+      requireBase("solana", "withdraw");
       throw new Error("expected exit");
     } catch (e: any) {
       expect(e.message).toBe("EXIT");
     }
     expect(exitCode).toBe(1);
     const out = JSON.parse(stderr.join(""));
-    expect(out.error).toContain("session-key");
+    expect(out.error).toContain("withdraw");
   });
 
   test("withdraw still works for base", async () => {
@@ -725,7 +725,7 @@ describe("specific error codes", () => {
   test("requireBase uses INVALID_CHAIN", async () => {
     const { requireBase } = await import("../../src/commands/live");
     try {
-      requireBase("solana", "session-key");
+      requireBase("solana", "withdraw");
       throw new Error("expected exit");
     } catch (e: any) {
       expect(e.message).toBe("EXIT");
