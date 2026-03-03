@@ -24,21 +24,24 @@ src/
   config.ts           Credentials and config file I/O
   context.ts          CmdContext type, getAuthClient helper
   output.ts           success() and error() JSON output functions
-  validate.ts         Input validation (integers, addresses, limits, slippage)
+  validate.ts         Input validation (integers, addresses, limits, slippage, dates, notes, bridge amounts)
   commands/
     auth.ts           Authentication (register, import, recover, init, me, update)
     paper.ts          Paper trading (trade, portfolio, trades, performance, pnl-image)
     live.ts           Live on-chain trading (quote, trade, withdraw, balance, portfolio)
-    token.ts          Token data & analytics (search, info, price, holders, trades, wallets)
+    token.ts          Token data & analytics (search, info, price, holders, trades, wallets, security, metadata)
     wallet.ts         Wallet analytics (stats, trades, chart, balances, top wallets)
     watch.ts          Polling loops (portfolio, price)
     copy.ts           Copy trading
     social.ts         Achievements, leaderboard
     feed.ts           Public trade feed, spec
     agent.ts          Public agent profiles and trade history
+    twitter.ts        Twitter data commands (search, user, tweets, trends, etc.)
     config.ts         CLI config management
     update.ts         Self-update
+    shortcuts.ts      Buy/sell top-level shortcuts
     skill.ts          SKILL.md management
+    session.ts        Session management (hidden command)
 tests/
   *.test.ts           Module-level tests (client, config, output, validate)
   commands/*.test.ts  Per-command tests
