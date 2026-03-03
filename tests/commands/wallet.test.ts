@@ -116,6 +116,16 @@ describe("wallet", () => {
   });
 });
 
+describe("wallet top -n flag", () => {
+  test("wallet top --help shows -n alias for --limit", async () => {
+    const { walletCommands } = await import("../../src/commands/wallet");
+    const cmd = walletCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
+    const topCmd = cmd.commands.find((c: any) => c.name() === "top");
+    const limitOpt = topCmd?.options.find((o: any) => o.long === "--limit");
+    expect(limitOpt?.short).toBe("-n");
+  });
+});
+
 describe("wallet top", () => {
   test("wallet top hits /agent/live/dex/top-wallets", async () => {
     mockApiResponse({ wallets: [{ address: "0xabc", pnl: "5000" }] });

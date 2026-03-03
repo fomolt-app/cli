@@ -81,6 +81,25 @@ export function validateTokenAddress(value: string, flag: string = "--token"): s
   return value;
 }
 
+export function validateAnyAddress(value: string, flag: string = "--token"): string {
+  if (/^0x[a-fA-F0-9]{40}$/.test(value) || /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) {
+    return value;
+  }
+  error(`${flag} must be a valid EVM (0x...) or Solana (base58) address, got "${value}"`, "INVALID_ADDRESS");
+  process.exit(1);
+}
+
+const VALID_OHLCV_TYPES = ["1S", "5S", "15S", "30S", "1m", "5m", "15m", "30m", "1H", "4H", "12H", "1D", "7D"] as const;
+export type OhlcvType = (typeof VALID_OHLCV_TYPES)[number];
+
+export function validateOhlcvType(value: string): OhlcvType {
+  if (!VALID_OHLCV_TYPES.includes(value as OhlcvType)) {
+    error(`--type must be one of ${VALID_OHLCV_TYPES.join(", ")}, got "${value}"`, "INVALID_ARGS");
+    process.exit(1);
+  }
+  return value as OhlcvType;
+}
+
 export function validateSlippage(value: string): string {
   const n = parseFloat(value);
   if (!Number.isFinite(n) || n <= 0 || n > 50) {
@@ -232,6 +251,42 @@ export function validateLeaderboardPeriod(value: string): LeaderboardPeriod {
     process.exit(1);
   }
   return value as LeaderboardPeriod;
+}
+
+export function normalizeDate(value: string, flag: string, endOfDay = false): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return endOfDay ? `${value}T23:59:59Z` : `${value}T00:00:00Z`;
+  }
+  return value;
+}
+
+export function validateNote(value: string): string {
+  if (value.length > 280) {
+    error(`--note must be at most 280 characters, got ${value.length}`, "INVALID_ARGS");
+    process.exit(1);
+  }
+  return value;
+}
+
+export function validateBridgeAmount(amount: number, direction: string): void {
+  if (direction === "base_to_solana") {
+    if (amount < 5 || amount > 500) {
+      error("--amount must be between 5 and 500 USDC for base_to_solana", "INVALID_AMOUNT");
+      process.exit(1);
+    }
+  } else {
+    if (amount < 0.05 || amount > 10) {
+      error("--amount must be between 0.05 and 10 SOL for solana_to_base", "INVALID_AMOUNT");
+      process.exit(1);
+    }
+  }
+}
+
+export function validateSolanaMinTrade(amount: number): void {
+  if (amount < 0.01) {
+    error("--sol must be at least 0.01 SOL", "INVALID_AMOUNT");
+    process.exit(1);
+  }
 }
 
 const VALID_PROPOSAL_TYPES = ["SCAM", "LOGO", "ATTRIBUTE"] as const;

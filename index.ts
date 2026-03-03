@@ -196,11 +196,6 @@ async function main() {
         ...(err.requestId ? { requestId: err.requestId } : {}),
         ...(err.hint ? { hint: err.hint } : {}),
       });
-      if (err.hint) {
-        const dim = process.stderr.isTTY ? "\x1b[2m" : "";
-        const reset = process.stderr.isTTY ? "\x1b[0m" : "";
-        process.stderr.write(`${dim}${err.hint}${reset}\n`);
-      }
     } else {
       error(err.message ?? "Unknown error", "UNEXPECTED_ERROR");
     }

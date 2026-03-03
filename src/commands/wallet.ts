@@ -42,7 +42,7 @@ export function walletCommands(getContext: () => CmdContext): Command {
     .description("Discover top-performing wallets")
     .option("--sort <field>", "Sort by: pnl, volume, win-rate", "pnl")
     .option("--period <period>", "Time period: 1d, 1w, 30d, 1y", "30d")
-    .option("--limit <n>", "Max results (1-100)", "20")
+    .option("-n, --limit <n>", "Max results (1-100)", "20")
     .option("--offset <n>", "Offset for pagination", "0")
     .action(async function (opts) {
       // --chain is parsed by the parent wallet command; read it from there

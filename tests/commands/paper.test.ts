@@ -313,6 +313,93 @@ describe("hintCLI injection", () => {
   });
 });
 
+// --- M-1: Missing amount flag validation ---
+
+describe("paper trade missing amount flags", () => {
+  test("buy without --usdc on base gives INVALID_ARGS", async () => {
+    const { paperCommands } = await import("../../src/commands/paper");
+    const cmd = paperCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
+    const tradeCmd = cmd.commands.find((c: any) => c.name() === "trade");
+    try {
+      await tradeCmd!.parseAsync([
+        "node", "trade",
+        "-c", "base", "-s", "buy", "-t", "0x4200000000000000000000000000000000000006",
+      ]);
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.code).toBe("INVALID_ARGS");
+    expect(out.error).toContain("--usdc");
+  });
+
+  test("sell without --quantity on base gives INVALID_ARGS", async () => {
+    const { paperCommands } = await import("../../src/commands/paper");
+    const cmd = paperCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
+    const tradeCmd = cmd.commands.find((c: any) => c.name() === "trade");
+    try {
+      await tradeCmd!.parseAsync([
+        "node", "trade",
+        "-c", "base", "-s", "sell", "-t", "0x4200000000000000000000000000000000000006",
+      ]);
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.code).toBe("INVALID_ARGS");
+    expect(out.error).toContain("--quantity");
+  });
+});
+
+// --- M-2: Date normalization ---
+
+describe("paper trades date normalization", () => {
+  test("--start-date 2026-02-25 normalizes to ISO", async () => {
+    mockApiResponse({ trades: [], count: 0 });
+
+    const { handlePaperTrades } = await import("../../src/commands/paper");
+    const { normalizeDate } = await import("../../src/validate");
+    const startDate = normalizeDate("2026-02-25", "--start-date");
+    expect(startDate).toBe("2026-02-25T00:00:00Z");
+
+    await handlePaperTrades(
+      { chain: "base", startDate, endDate: "2026-02-26T23:59:59Z" },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+    const url = new URL((globalThis.fetch as any).mock.calls[0][0]);
+    expect(url.searchParams.get("startDate")).toBe("2026-02-25T00:00:00Z");
+  });
+});
+
+// --- M-3: Note length validation ---
+
+describe("paper trade note validation", () => {
+  test("--note over 280 chars gives INVALID_ARGS", async () => {
+    const { paperCommands } = await import("../../src/commands/paper");
+    const cmd = paperCommands(() => ({ apiUrl: "https://fomolt.test", apiKey: "k" }));
+    const tradeCmd = cmd.commands.find((c: any) => c.name() === "trade");
+    const longNote = "x".repeat(281);
+    try {
+      await tradeCmd!.parseAsync([
+        "node", "trade",
+        "-c", "base", "-s", "buy", "-t", "0x4200000000000000000000000000000000000006",
+        "--usdc", "100", "--note", longNote,
+      ]);
+      throw new Error("expected exit");
+    } catch (e: any) {
+      expect(e.message).toBe("EXIT");
+    }
+    expect(exitCode).toBe(1);
+    const out = JSON.parse(stderr.join(""));
+    expect(out.code).toBe("INVALID_ARGS");
+    expect(out.error).toContain("280");
+  });
+});
+
 // --- pnl-image Base-only ---
 
 describe("paper pnl-image", () => {

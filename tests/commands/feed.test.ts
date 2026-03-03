@@ -57,6 +57,48 @@ test("ohlcv fetches candle data without auth", async () => {
   expect(output.data.candles[0].open).toBe("1.00");
 });
 
+test("ohlcv auto-generates time_from and time_to when omitted", async () => {
+  const mockFetch = mock(() =>
+    Promise.resolve(
+      new Response(
+        JSON.stringify({ success: true, response: { items: [] } }),
+        { status: 200, headers: { "Content-Type": "application/json", "X-Request-Id": "r1" } }
+      )
+    )
+  );
+  globalThis.fetch = mockFetch as any;
+  const { handleOhlcv } = await import("../../src/commands/feed");
+  await handleOhlcv({ token: "0x1234567890abcdef1234567890abcdef12345678", type: "1H" }, { apiUrl: "https://fomolt.test" });
+  const url = new URL(mockFetch.mock.calls[0][0]);
+  expect(url.searchParams.get("type")).toBe("1H");
+  // Should auto-generate time_from and time_to
+  const timeFrom = url.searchParams.get("time_from");
+  const timeTo = url.searchParams.get("time_to");
+  expect(timeFrom).not.toBeNull();
+  expect(timeTo).not.toBeNull();
+  const from = Number(timeFrom);
+  const to = Number(timeTo);
+  expect(to - from).toBe(604800); // 7 days for hourly
+});
+
+test("ohlcv sub-minute type uses 1 hour default range", async () => {
+  const mockFetch = mock(() =>
+    Promise.resolve(
+      new Response(
+        JSON.stringify({ success: true, response: { items: [] } }),
+        { status: 200, headers: { "Content-Type": "application/json", "X-Request-Id": "r1" } }
+      )
+    )
+  );
+  globalThis.fetch = mockFetch as any;
+  const { handleOhlcv } = await import("../../src/commands/feed");
+  await handleOhlcv({ token: "0x1234567890abcdef1234567890abcdef12345678", type: "1S" }, { apiUrl: "https://fomolt.test" });
+  const url = new URL(mockFetch.mock.calls[0][0]);
+  const from = Number(url.searchParams.get("time_from"));
+  const to = Number(url.searchParams.get("time_to"));
+  expect(to - from).toBe(3600); // 1 hour for sub-minute
+});
+
 test("spec returns API manifest without auth", async () => {
   const mockFetch = mock(() =>
     Promise.resolve(
