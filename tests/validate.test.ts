@@ -8,7 +8,13 @@ import {
   validateChain,
   validateSolanaAddress,
   validateAddress,
+  validateAnyAddress,
+  validateOhlcvType,
   validateMarket,
+  normalizeDate,
+  validateNote,
+  validateBridgeAmount,
+  validateSolanaMinTrade,
 } from "../src/validate";
 
 let stderr: string[] = [];
@@ -365,6 +371,54 @@ describe("validateAddress", () => {
   });
 });
 
+// --- validateAnyAddress ---
+describe("validateAnyAddress", () => {
+  test("valid EVM address", () => {
+    const addr = "0x4200000000000000000000000000000000000006";
+    expect(validateAnyAddress(addr)).toBe(addr);
+  });
+
+  test("valid Solana address", () => {
+    const addr = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    expect(validateAnyAddress(addr)).toBe(addr);
+  });
+
+  test("invalid string rejects", () => {
+    expectError(() => validateAnyAddress("not-an-address"), "INVALID_ADDRESS");
+  });
+
+  test("empty string rejects", () => {
+    expectError(() => validateAnyAddress(""), "INVALID_ADDRESS");
+  });
+});
+
+// --- validateOhlcvType ---
+describe("validateOhlcvType", () => {
+  test("valid type 1H", () => {
+    expect(validateOhlcvType("1H")).toBe("1H");
+  });
+
+  test("valid type 12H", () => {
+    expect(validateOhlcvType("12H")).toBe("12H");
+  });
+
+  test("valid type 7D", () => {
+    expect(validateOhlcvType("7D")).toBe("7D");
+  });
+
+  test("valid type 1S", () => {
+    expect(validateOhlcvType("1S")).toBe("1S");
+  });
+
+  test("invalid type 2H", () => {
+    expectError(() => validateOhlcvType("2H"), "INVALID_ARGS");
+  });
+
+  test("invalid type 60", () => {
+    expectError(() => validateOhlcvType("60"), "INVALID_ARGS");
+  });
+});
+
 // --- validateMarket ---
 describe("validateMarket", () => {
   test("paper is valid", () => {
@@ -381,5 +435,83 @@ describe("validateMarket", () => {
 
   test("empty string rejects", () => {
     expectError(() => validateMarket(""), "INVALID_MARKET");
+  });
+});
+
+// --- normalizeDate ---
+describe("normalizeDate", () => {
+  test("date-only string gets T00:00:00Z appended", () => {
+    expect(normalizeDate("2026-02-25", "--start-date")).toBe("2026-02-25T00:00:00Z");
+  });
+
+  test("date-only string with endOfDay gets T23:59:59Z", () => {
+    expect(normalizeDate("2026-02-26", "--end-date", true)).toBe("2026-02-26T23:59:59Z");
+  });
+
+  test("full ISO datetime is passed through unchanged", () => {
+    expect(normalizeDate("2026-02-25T12:00:00Z", "--start-date")).toBe("2026-02-25T12:00:00Z");
+  });
+
+  test("partial datetime is passed through unchanged", () => {
+    expect(normalizeDate("2026-02-25T12:00:00", "--start-date")).toBe("2026-02-25T12:00:00");
+  });
+});
+
+// --- validateNote ---
+describe("validateNote", () => {
+  test("short note is valid", () => {
+    expect(validateNote("Buy the dip")).toBe("Buy the dip");
+  });
+
+  test("exactly 280 chars is valid", () => {
+    const note = "x".repeat(280);
+    expect(validateNote(note)).toBe(note);
+  });
+
+  test("281 chars is rejected", () => {
+    const note = "x".repeat(281);
+    expectError(() => validateNote(note), "INVALID_ARGS");
+  });
+});
+
+// --- validateBridgeAmount ---
+describe("validateBridgeAmount", () => {
+  test("valid base_to_solana amount", () => {
+    validateBridgeAmount(50, "base_to_solana"); // should not throw
+  });
+
+  test("base_to_solana below min rejects", () => {
+    expectError(() => validateBridgeAmount(4, "base_to_solana"), "INVALID_AMOUNT");
+  });
+
+  test("base_to_solana above max rejects", () => {
+    expectError(() => validateBridgeAmount(501, "base_to_solana"), "INVALID_AMOUNT");
+  });
+
+  test("valid solana_to_base amount", () => {
+    validateBridgeAmount(1, "solana_to_base"); // should not throw
+  });
+
+  test("solana_to_base below min rejects", () => {
+    expectError(() => validateBridgeAmount(0.04, "solana_to_base"), "INVALID_AMOUNT");
+  });
+
+  test("solana_to_base above max rejects", () => {
+    expectError(() => validateBridgeAmount(11, "solana_to_base"), "INVALID_AMOUNT");
+  });
+});
+
+// --- validateSolanaMinTrade ---
+describe("validateSolanaMinTrade", () => {
+  test("valid amount above min", () => {
+    validateSolanaMinTrade(0.1); // should not throw
+  });
+
+  test("exactly 0.01 is valid", () => {
+    validateSolanaMinTrade(0.01); // should not throw
+  });
+
+  test("below 0.01 rejects", () => {
+    expectError(() => validateSolanaMinTrade(0.009), "INVALID_AMOUNT");
   });
 });

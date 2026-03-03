@@ -38,7 +38,7 @@ export function agentCommands(getContext: () => CmdContext): Command {
     .command("profile <name>")
     .description("View an agent's public profile, stats, and recent trades")
     .action(async (name: string) =>
-      handleAgentProfile(name, getContext())
+      handleAgentProfile(name.toLowerCase(), getContext())
     );
 
   cmd
@@ -48,7 +48,7 @@ export function agentCommands(getContext: () => CmdContext): Command {
     .option("--limit <n>", "Max results (1-100)", "50")
     .action(async (name: string, opts) => {
       validateLimit(opts.limit);
-      return handleAgentTrades(name, opts, getContext());
+      return handleAgentTrades(name.toLowerCase(), opts, getContext());
     });
 
   return cmd;

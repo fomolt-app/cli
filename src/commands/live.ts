@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { success, successWithHint, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-import { validatePositiveNumber, validateLimit, validateSlippage, validateChain, validateSide, validateAddress, type Chain } from "../validate";
+import { validatePositiveNumber, validateLimit, validateSlippage, validateChain, validateSide, validateAddress, normalizeDate, validateNote, validateBridgeAmount, validateSolanaMinTrade, type Chain } from "../validate";
 
 export function requireBase(chain: Chain, command: string): void {
   if (chain !== "base") {
@@ -475,8 +475,27 @@ export function liveCommands(getContext: () => CmdContext): Command {
         error("Use --quantity for Base sells, --percent is for Solana only", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
+      if (opts.side === "buy" && chain === "base" && !opts.usdc) {
+        error("--usdc is required for Base buy orders", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (opts.side === "buy" && chain === "solana" && !opts.sol) {
+        error("--sol is required for Solana buy orders", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (opts.side === "sell" && chain === "base" && !opts.quantity) {
+        error("--quantity is required for Base sell orders", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (opts.side === "sell" && chain === "solana" && !opts.percent) {
+        error("--percent is required for Solana sell orders", "INVALID_ARGS");
+        process.exit(1);
+      }
       if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
-      if (opts.sol) validatePositiveNumber(opts.sol, "--sol");
+      if (opts.sol) {
+        const solAmt = validatePositiveNumber(opts.sol, "--sol");
+        if (chain === "solana") validateSolanaMinTrade(solAmt);
+      }
       if (opts.quantity) validatePositiveNumber(opts.quantity, "--quantity");
       if (opts.percent) {
         validatePositiveNumber(opts.percent, "--percent");
@@ -487,6 +506,7 @@ export function liveCommands(getContext: () => CmdContext): Command {
         }
       }
       if (opts.slippage) validateSlippage(opts.slippage);
+      if (opts.note) validateNote(opts.note);
       return handleLiveTrade({ ...opts, chain }, getContext());
     });
 
@@ -530,6 +550,8 @@ export function liveCommands(getContext: () => CmdContext): Command {
       const chain = validateChain(opts.chain);
       if (opts.limit) validateLimit(opts.limit);
       if (opts.token) validateAddress(opts.token, chain);
+      const startDate = opts.startDate ? normalizeDate(opts.startDate, "--start-date") : undefined;
+      const endDate = opts.endDate ? normalizeDate(opts.endDate, "--end-date", true) : undefined;
       const addrField = chain === "base" ? "contractAddress" : "mintAddress";
       return handleLiveTrades(
         {
@@ -539,8 +561,8 @@ export function liveCommands(getContext: () => CmdContext): Command {
           [addrField]: opts.token,
           side: opts.side,
           status: opts.status,
-          startDate: opts.startDate,
-          endDate: opts.endDate,
+          startDate,
+          endDate,
           sort: opts.sort,
         },
         getContext()
@@ -573,7 +595,8 @@ export function liveCommands(getContext: () => CmdContext): Command {
         error('--direction must be "base_to_solana" or "solana_to_base"', "INVALID_DIRECTION");
         process.exit(1);
       }
-      validatePositiveNumber(opts.amount, "--amount");
+      const bridgeAmt = validatePositiveNumber(opts.amount, "--amount");
+      validateBridgeAmount(bridgeAmt, opts.direction);
       if (opts.slippage) validateSlippage(opts.slippage);
       return handleLiveBridgeQuote(opts, getContext());
     });
@@ -590,8 +613,10 @@ export function liveCommands(getContext: () => CmdContext): Command {
         error('--direction must be "base_to_solana" or "solana_to_base"', "INVALID_DIRECTION");
         process.exit(1);
       }
-      validatePositiveNumber(opts.amount, "--amount");
+      const bridgeAmt = validatePositiveNumber(opts.amount, "--amount");
+      validateBridgeAmount(bridgeAmt, opts.direction);
       if (opts.slippage) validateSlippage(opts.slippage);
+      if (opts.note) validateNote(opts.note);
       return handleLiveBridge(opts, getContext());
     });
 

@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { error } from "../output";
 import type { CmdContext } from "../context";
-import { validatePositiveNumber, validateSlippage, validateChain, validateAddress } from "../validate";
+import { validatePositiveNumber, validateSlippage, validateChain, validateAddress, validateNote, validateSolanaMinTrade } from "../validate";
 import { handleLiveTrade } from "./live";
 import { handlePaperTrade } from "./paper";
 
@@ -27,9 +27,21 @@ export function buyCommand(getContext: () => CmdContext): Command {
         error("Use --sol for Solana buys, --usdc is for Base", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
+      if (chain === "base" && !opts.usdc) {
+        error("--usdc is required for Base buy orders", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (chain === "solana" && !opts.sol) {
+        error("--sol is required for Solana buy orders", "INVALID_ARGS");
+        process.exit(1);
+      }
       if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
-      if (opts.sol) validatePositiveNumber(opts.sol, "--sol");
+      if (opts.sol) {
+        const solAmt = validatePositiveNumber(opts.sol, "--sol");
+        if (chain === "solana") validateSolanaMinTrade(solAmt);
+      }
       if (opts.slippage) validateSlippage(opts.slippage);
+      if (opts.note) validateNote(opts.note);
       const tradeOpts = { side: "buy", token: opts.token, chain, usdc: opts.usdc, sol: opts.sol, slippage: opts.slippage, note: opts.note };
       if (opts.market === "paper") {
         return handlePaperTrade(tradeOpts, getContext());
@@ -62,6 +74,14 @@ export function sellCommand(getContext: () => CmdContext): Command {
         error("Use --quantity for Base sells, --percent is for Solana only", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
+      if (chain === "base" && !opts.quantity) {
+        error("--quantity is required for Base sell orders", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (chain === "solana" && !opts.percent) {
+        error("--percent is required for Solana sell orders", "INVALID_ARGS");
+        process.exit(1);
+      }
       if (opts.quantity) validatePositiveNumber(opts.quantity, "--quantity");
       if (opts.percent) {
         validatePositiveNumber(opts.percent, "--percent");
@@ -72,6 +92,7 @@ export function sellCommand(getContext: () => CmdContext): Command {
         }
       }
       if (opts.slippage) validateSlippage(opts.slippage);
+      if (opts.note) validateNote(opts.note);
       const tradeOpts = { side: "sell", token: opts.token, chain, quantity: opts.quantity, percent: opts.percent, slippage: opts.slippage, note: opts.note };
       if (opts.market === "paper") {
         return handlePaperTrade(tradeOpts, getContext());

@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { success, successWithHint, error } from "../output";
 import { getAuthClient, type CmdContext } from "../context";
-import { validateTokenAddress, validatePositiveNumber, validateLimit, validateChain, validateSide, validateAddress, type Chain } from "../validate";
+import { validateTokenAddress, validatePositiveNumber, validateLimit, validateChain, validateSide, validateAddress, normalizeDate, validateNote, validateSolanaMinTrade, type Chain } from "../validate";
 
 export async function handlePaperPrice(
   opts: { token: string; chain: Chain },
@@ -129,8 +129,27 @@ export function paperCommands(getContext: () => CmdContext): Command {
         error("Use --quantity for Base sells, --percent is for Solana only", "WRONG_CHAIN_FLAG");
         process.exit(1);
       }
+      if (opts.side === "buy" && chain === "base" && !opts.usdc) {
+        error("--usdc is required for Base buy orders", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (opts.side === "buy" && chain === "solana" && !opts.sol) {
+        error("--sol is required for Solana buy orders", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (opts.side === "sell" && chain === "base" && !opts.quantity) {
+        error("--quantity is required for Base sell orders", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (opts.side === "sell" && chain === "solana" && !opts.percent) {
+        error("--percent is required for Solana sell orders", "INVALID_ARGS");
+        process.exit(1);
+      }
       if (opts.usdc) validatePositiveNumber(opts.usdc, "--usdc");
-      if (opts.sol) validatePositiveNumber(opts.sol, "--sol");
+      if (opts.sol) {
+        const solAmt = validatePositiveNumber(opts.sol, "--sol");
+        if (chain === "solana") validateSolanaMinTrade(solAmt);
+      }
       if (opts.quantity) validatePositiveNumber(opts.quantity, "--quantity");
       if (opts.percent) {
         const pct = Number(opts.percent);
@@ -139,6 +158,7 @@ export function paperCommands(getContext: () => CmdContext): Command {
           process.exit(1);
         }
       }
+      if (opts.note) validateNote(opts.note);
       return handlePaperTrade({ ...opts, chain }, getContext());
     });
 
@@ -166,6 +186,8 @@ export function paperCommands(getContext: () => CmdContext): Command {
       const chain = validateChain(opts.chain);
       if (opts.limit) validateLimit(opts.limit);
       if (opts.token) validateAddress(opts.token, chain);
+      const startDate = opts.startDate ? normalizeDate(opts.startDate, "--start-date") : undefined;
+      const endDate = opts.endDate ? normalizeDate(opts.endDate, "--end-date", true) : undefined;
       const addrField = chain === "base" ? "contractAddress" : "mintAddress";
       return handlePaperTrades(
         {
@@ -174,8 +196,8 @@ export function paperCommands(getContext: () => CmdContext): Command {
           limit: opts.limit,
           [addrField]: opts.token,
           side: opts.side,
-          startDate: opts.startDate,
-          endDate: opts.endDate,
+          startDate,
+          endDate,
           sort: opts.sort,
         },
         getContext()
