@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { error as cliError } from "../output";
 import type { CmdContext } from "../context";
 import { validateChain, validateAddress, validatePositiveNumber, validateLimit, validateSort, validateOrder, validateTokenWalletSort, validatePeriod, validateMarket, validateSparklineResolution, validatePairStatsDurations, validateProposalType } from "../validate";
-import { handleLiveTokens, handleLiveTokenInfo, handleLivePrice, handleLiveHolders, handleLiveTokenTrades, handleLiveTokenWallets, handleLiveTopTraders, handleLiveSparklines, handleLivePairStats, handleLiveLiquidityLocks, handleLiveLifecycleEvents, handleLiveTokenPairs, handleLiveCommunityNotes } from "./live";
+import { handleLiveTokens, handleLiveTokenInfo, handleLivePrice, handleLiveHolders, handleLiveTokenTrades, handleLiveTokenWallets, handleLiveTopTraders, handleLiveSparklines, handleLivePairStats, handleLiveLiquidityLocks, handleLiveLifecycleEvents, handleLiveTokenPairs, handleLiveCommunityNotes, handleLiveTokenSecurity, handleLiveTokenMetadata } from "./live";
 import { handlePaperPrice } from "./paper";
 
 export function tokenCommands(getContext: () => CmdContext): Command {
@@ -19,28 +19,40 @@ export function tokenCommands(getContext: () => CmdContext): Command {
     .option("-t, --token <address>", "Exact address lookup (overrides mode)")
     .option("-n, --limit <n>", "Max results (1-100)", "20")
     .option("--min-liquidity <amount>", "Minimum liquidity filter")
+    .option("--max-liquidity <amount>", "Maximum liquidity filter")
     .option("--min-volume-1h <amount>", "Minimum 1h volume in USD filter")
     .option("--min-holders <count>", "Minimum holder count filter")
     .option("--min-market-cap <amount>", "Minimum market cap in USD")
     .option("--max-market-cap <amount>", "Maximum market cap in USD")
     .option("--min-age <minutes>", "Minimum token age in minutes")
     .option("--max-age <minutes>", "Maximum token age in minutes")
+    .option("--min-trade-1h-count <count>", "Minimum 1h trade count (mode=new)")
+    .option("--min-last-trade-time <timestamp>", "Minimum last trade unix timestamp (mode=new)")
+    .option("--offset <n>", "Offset for pagination (mode=new)", "0")
     .option("--sort <field>", "Sort by: trending, volume, market_cap, holders, created", "trending")
     .option("--order <dir>", "Sort direction: asc or desc", "desc")
+    .option("--stats-type <type>", "Stats type: FILTERED or UNFILTERED")
     .addHelpText("after", "\nExamples:\n  fomolt token search -c solana --mode trending\n  fomolt token search -c base --mode search --term \"pepe\"")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       validateLimit(opts.limit);
       if (opts.token) validateAddress(opts.token, chain, "--token");
       if (opts.minLiquidity) validatePositiveNumber(opts.minLiquidity, "--min-liquidity");
+      if (opts.maxLiquidity) validatePositiveNumber(opts.maxLiquidity, "--max-liquidity");
       if (opts.minVolume1h) validatePositiveNumber(opts.minVolume1h, "--min-volume-1h");
       if (opts.minHolders) validatePositiveNumber(opts.minHolders, "--min-holders");
       if (opts.minMarketCap) validatePositiveNumber(opts.minMarketCap, "--min-market-cap");
       if (opts.maxMarketCap) validatePositiveNumber(opts.maxMarketCap, "--max-market-cap");
       if (opts.minAge) validatePositiveNumber(opts.minAge, "--min-age");
       if (opts.maxAge) validatePositiveNumber(opts.maxAge, "--max-age");
+      if (opts.minTrade1hCount) validatePositiveNumber(opts.minTrade1hCount, "--min-trade-1h-count");
+      if (opts.minLastTradeTime) validatePositiveNumber(opts.minLastTradeTime, "--min-last-trade-time");
       if (opts.sort) validateSort(opts.sort);
       if (opts.order) validateOrder(opts.order);
+      if (opts.statsType && opts.statsType !== "FILTERED" && opts.statsType !== "UNFILTERED") {
+        cliError('--stats-type must be "FILTERED" or "UNFILTERED"', "INVALID_ARGS");
+        process.exit(1);
+      }
       return handleLiveTokens({ ...opts, address: opts.token, chain }, getContext(), { tokenInfoCmd: "fomolt token info" });
     });
 
@@ -234,6 +246,28 @@ export function tokenCommands(getContext: () => CmdContext): Command {
       if (opts.proposalType) validateProposalType(opts.proposalType);
       validateLimit(opts.limit);
       return handleLiveCommunityNotes({ chain, address: opts.token, proposalType: opts.proposalType, limit: opts.limit, cursor: opts.cursor }, getContext());
+    });
+
+  cmd
+    .command("security")
+    .description("Get security audit for a token (freezable, mintable, scam detection, holder concentration)")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      validateAddress(opts.token, chain, "--token");
+      return handleLiveTokenSecurity({ address: opts.token, chain }, getContext());
+    });
+
+  cmd
+    .command("metadata")
+    .description("Get token description and social links (website, Twitter, Telegram, Discord)")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token contract address")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      validateAddress(opts.token, chain, "--token");
+      return handleLiveTokenMetadata({ address: opts.token, chain }, getContext());
     });
 
   return cmd;

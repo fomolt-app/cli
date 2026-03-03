@@ -11,7 +11,7 @@ export function requireBase(chain: Chain, command: string): void {
 }
 
 export async function handleLiveTokens(
-  opts: { chain: Chain; mode?: string; term?: string; address?: string; limit?: string; minLiquidity?: string; minVolume1h?: string; minHolders?: string; minMarketCap?: string; maxMarketCap?: string; minAge?: string; maxAge?: string; sort?: string; order?: string },
+  opts: { chain: Chain; mode?: string; term?: string; address?: string; limit?: string; minLiquidity?: string; maxLiquidity?: string; minVolume1h?: string; minHolders?: string; minMarketCap?: string; maxMarketCap?: string; minAge?: string; maxAge?: string; minTrade1hCount?: string; minLastTradeTime?: string; offset?: string; sort?: string; order?: string; statsType?: string },
   ctx: CmdContext,
   hintOptions?: { tokenInfoCmd?: string }
 ): Promise<void> {
@@ -23,14 +23,19 @@ export async function handleLiveTokens(
   if (opts.term) params.term = opts.term;
   if (opts.limit) params.limit = opts.limit;
   if (opts.minLiquidity) params.min_liquidity = opts.minLiquidity;
+  if (opts.maxLiquidity) params.max_liquidity = opts.maxLiquidity;
   if (opts.minVolume1h) params.min_volume_1h_usd = opts.minVolume1h;
   if (opts.minHolders) params.min_holder = opts.minHolders;
   if (opts.minMarketCap) params.min_market_cap = opts.minMarketCap;
   if (opts.maxMarketCap) params.max_market_cap = opts.maxMarketCap;
   if (opts.minAge) params.min_age = opts.minAge;
   if (opts.maxAge) params.max_age = opts.maxAge;
+  if (opts.minTrade1hCount) params.min_trade_1h_count = opts.minTrade1hCount;
+  if (opts.minLastTradeTime) params.min_last_trade_time = opts.minLastTradeTime;
+  if (opts.offset && opts.offset !== "0") params.offset = opts.offset;
   if (opts.sort) params.sort = opts.sort;
   if (opts.order) params.order = opts.order;
+  if (opts.statsType) params.stats_type = opts.statsType;
   const data = await client.get(`/agent/live/${prefix}/tokens`, params);
   const tokens = data && typeof data === "object" && Array.isArray((data as any).tokens) ? (data as any).tokens : [];
   if (tokens.length > 0) {
@@ -378,6 +383,24 @@ export async function handleLiveCommunityNotes(
   success(data);
 }
 
+export async function handleLiveTokenSecurity(
+  opts: { address: string; chain: Chain },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const data = await client.get("/agent/live/dex/token-security", { address: opts.address, chain: opts.chain });
+  success(data);
+}
+
+export async function handleLiveTokenMetadata(
+  opts: { address: string; chain: Chain },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const data = await client.get("/agent/live/dex/token-metadata", { address: opts.address, chain: opts.chain });
+  success(data);
+}
+
 export function liveCommands(getContext: () => CmdContext): Command {
   const cmd = new Command("live").description(
     "Live on-chain trading on Base & Solana"
@@ -515,12 +538,14 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .description("Withdraw funds from account")
     .requiredOption("-c, --chain <chain>", "Chain: base or solana")
     .requiredOption("--currency <currency>", "Asset to withdraw (USDC, ETH, SOL, or token address)")
-    .requiredOption("--amount <amount>", "Amount to withdraw")
+    .requiredOption("--amount <amount>", 'Amount to withdraw (or "max" for full balance)')
     .requiredOption("--to <address>", "Destination wallet address")
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       validateAddress(opts.to, chain, "--to");
-      validatePositiveNumber(opts.amount, "--amount");
+      if (opts.amount.toLowerCase() !== "max") {
+        validatePositiveNumber(opts.amount, "--amount");
+      }
       return handleLiveWithdraw({ ...opts, chain }, getContext());
     });
 
