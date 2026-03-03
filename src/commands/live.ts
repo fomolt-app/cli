@@ -207,12 +207,6 @@ export async function handleLiveBridge(
   successWithHint(data, `Check balances: fomolt live balance --chain base && fomolt live balance --chain solana`);
 }
 
-export async function handleLiveSessionKey(ctx: CmdContext): Promise<void> {
-  const client = await getAuthClient(ctx);
-  const data = await client.post("/agent/live/base/session-key");
-  success(data);
-}
-
 export async function handleLivePrice(
   opts: { token: string; chain: Chain },
   ctx: CmdContext
@@ -651,16 +645,6 @@ export function liveCommands(getContext: () => CmdContext): Command {
     });
 
   cmd.addCommand(bridge);
-
-  cmd
-    .command("session-key")
-    .description("Create or retrieve a session key (Base only)")
-    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
-    .action(async (opts) => {
-      const chain = validateChain(opts.chain);
-      requireBase(chain, "session-key");
-      return handleLiveSessionKey(getContext());
-    });
 
   return cmd;
 }

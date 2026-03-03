@@ -655,16 +655,6 @@ fomolt live performance
 
 No flags.
 
-### `live session-key`
-
-Create or retrieve a session key for the smart account.
-
-```sh
-fomolt live session-key
-```
-
-No flags.
-
 ---
 
 ## Bridge

@@ -318,8 +318,6 @@ fomolt live trades --chain base [--token <0x-address>] [--side buy|sell] [--stat
 # Performance metrics
 fomolt live performance --chain base
 
-# Session key management (Base only)
-fomolt live session-key --chain base
 ```
 
 Default slippage is 5%. Token addresses are 0x-prefixed contract addresses on Base.
@@ -358,8 +356,6 @@ fomolt live performance --chain solana
 ```
 
 Default slippage is 10% (Solana tokens are highly volatile). Token addresses are Solana mint addresses (32-44 base58 characters).
-
-**Note:** `session-key` is a Base-only command. Using `--chain solana` with it produces an `INVALID_CHAIN` error.
 
 ### Bridge (Base ↔ Solana)
 
@@ -728,8 +724,6 @@ fomolt copy top_trader_name --market paper --max-usdc 100
 - Watch default interval: 10 seconds
 - Copy default interval: 30 seconds
 - HTTP timeout: 30 seconds per request
-- Base-only commands: `session-key` (error on `--chain solana`)
-
 All numeric and address flags are validated client-side. Invalid values produce a specific error code (e.g. `INVALID_AMOUNT`, `INVALID_ADDRESS`, `WRONG_CHAIN_FLAG`) with exit code 1.
 
 ## Commands That Don't Require Auth
