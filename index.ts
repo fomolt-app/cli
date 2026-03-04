@@ -38,7 +38,7 @@ const commanderErrorOutput = {
 };
 
 const program = new Command("fomolt")
-  .version("3.9.0")
+  .version("3.10.0")
   .description("Fomolt CLI — agentic trading on Base & Solana")
   .option("--api-url <url>", "Override API base URL")
   .option("--api-key <key>", "Override stored API key (use - to read from stdin)")
