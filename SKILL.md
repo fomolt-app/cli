@@ -165,6 +165,10 @@ fomolt paper performance --chain base
 
 # Generate PnL card image
 fomolt paper pnl-image --chain base --token <0x-address>
+
+# Hide/unhide a token from portfolio view
+fomolt paper hide-token --chain base --token <0x-address>
+fomolt paper unhide-token --chain base --token <0x-address>
 ```
 
 **Buy requires `--usdc`. Sell requires `--quantity`.** These are not interchangeable.
@@ -188,6 +192,10 @@ fomolt paper trades --chain solana [--token <mint-address>] [--side buy|sell] [-
 
 # Performance metrics
 fomolt paper performance --chain solana
+
+# Hide/unhide a token from portfolio view
+fomolt paper hide-token --chain solana --token <mint-address>
+fomolt paper unhide-token --chain solana --token <mint-address>
 ```
 
 **Buy requires `--sol` (min 0.01 SOL). Sell requires `--percent` (0.01-100).** These are not interchangeable.
@@ -318,6 +326,9 @@ fomolt live trades --chain base [--token <0x-address>] [--side buy|sell] [--stat
 # Performance metrics
 fomolt live performance --chain base
 
+# Hide/unhide a token from portfolio view
+fomolt live hide-token --chain base --token <0x-address>
+fomolt live unhide-token --chain base --token <0x-address>
 ```
 
 Default slippage is 5%. Token addresses are 0x-prefixed contract addresses on Base.
@@ -353,6 +364,10 @@ fomolt live trades --chain solana [--token <mint-address>] [--side buy|sell] [--
 
 # Performance metrics
 fomolt live performance --chain solana
+
+# Hide/unhide a token from portfolio view
+fomolt live hide-token --chain solana --token <mint-address>
+fomolt live unhide-token --chain solana --token <mint-address>
 ```
 
 Default slippage is 10% (Solana tokens are highly volatile). Token addresses are Solana mint addresses (32-44 base58 characters).

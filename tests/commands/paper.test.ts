@@ -419,3 +419,49 @@ describe("paper pnl-image", () => {
     expect(output.ok).toBe(true);
   });
 });
+
+// --- hide-token / unhide-token ---
+
+describe("paper hide-token", () => {
+  test("hide-token sends hidden: true (base)", async () => {
+    mockApiResponse({ contractAddress: "0x0000000000000000000000000000000000000001", hidden: true });
+
+    const { handlePaperHideToken } = await import("../../src/commands/paper");
+    await handlePaperHideToken(
+      { token: "0x0000000000000000000000000000000000000001", chain: "base", hidden: true },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const call = (globalThis.fetch as any).mock.calls[0];
+    const url = new URL(call[0]);
+    expect(url.pathname).toContain("/agent/paper/base/hide-token");
+
+    const body = JSON.parse(call[1].body);
+    expect(body.contractAddress).toBe("0x0000000000000000000000000000000000000001");
+    expect(body.hidden).toBe(true);
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.ok).toBe(true);
+  });
+
+  test("unhide-token sends hidden: false (solana)", async () => {
+    mockApiResponse({ mintAddress: "So11111111111111111111111111111111111111112", hidden: false });
+
+    const { handlePaperHideToken } = await import("../../src/commands/paper");
+    await handlePaperHideToken(
+      { token: "So11111111111111111111111111111111111111112", chain: "solana", hidden: false },
+      { apiUrl: "https://fomolt.test", apiKey: "k" }
+    );
+
+    const call = (globalThis.fetch as any).mock.calls[0];
+    const url = new URL(call[0]);
+    expect(url.pathname).toContain("/agent/paper/solana/hide-token");
+
+    const body = JSON.parse(call[1].body);
+    expect(body.mintAddress).toBe("So11111111111111111111111111111111111111112");
+    expect(body.hidden).toBe(false);
+
+    const output = JSON.parse(stdout.join(""));
+    expect(output.ok).toBe(true);
+  });
+});

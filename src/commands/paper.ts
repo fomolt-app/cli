@@ -86,6 +86,19 @@ export async function handlePaperPnlImage(
   success(data);
 }
 
+export async function handlePaperHideToken(
+  opts: { token: string; chain: Chain; hidden: boolean },
+  ctx: CmdContext,
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const addrField = opts.chain === "base" ? "contractAddress" : "mintAddress";
+  const data = await client.post(`/agent/paper/${opts.chain}/hide-token`, {
+    [addrField]: opts.token,
+    hidden: opts.hidden,
+  });
+  successWithHint(data, `Check portfolio: fomolt paper portfolio --chain ${opts.chain}`);
+}
+
 export function paperCommands(getContext: () => CmdContext): Command {
   const cmd = new Command("paper").description(
     "Paper trading with simulated funds"
@@ -225,6 +238,28 @@ export function paperCommands(getContext: () => CmdContext): Command {
         process.exit(1);
       }
       return handlePaperPnlImage({ token: validateTokenAddress(opts.token) }, getContext());
+    });
+
+  cmd
+    .command("hide-token")
+    .description("Hide a token from portfolio view")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token address")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      validateAddress(opts.token, chain);
+      return handlePaperHideToken({ token: opts.token, chain, hidden: true }, getContext());
+    });
+
+  cmd
+    .command("unhide-token")
+    .description("Unhide a token, restoring it to portfolio view")
+    .requiredOption("-c, --chain <chain>", "Chain: base or solana")
+    .requiredOption("-t, --token <address>", "Token address")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      validateAddress(opts.token, chain);
+      return handlePaperHideToken({ token: opts.token, chain, hidden: false }, getContext());
     });
 
   return cmd;

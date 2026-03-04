@@ -235,6 +235,27 @@ fomolt paper pnl-image --token <address>
 |------|----------|-------------|
 | `--token <address>` | yes | Token contract address |
 
+### `paper hide-token`
+
+Hide a token from portfolio view. Hidden tokens are excluded from portfolio output and position counts.
+
+```sh
+fomolt paper hide-token --chain <chain> --token <address>
+```
+
+### `paper unhide-token`
+
+Unhide a previously hidden token, restoring it to portfolio view.
+
+```sh
+fomolt paper unhide-token --chain <chain> --token <address>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--chain <chain>` | yes | `base` or `solana` |
+| `--token <address>` | yes | Token contract address (Base) or mint address (Solana) |
+
 ---
 
 ## Token Data
@@ -654,6 +675,27 @@ fomolt live performance
 ```
 
 No flags.
+
+### `live hide-token`
+
+Hide a token from portfolio view. Hidden tokens are excluded from portfolio output and position counts.
+
+```sh
+fomolt live hide-token --chain <chain> --token <address>
+```
+
+### `live unhide-token`
+
+Unhide a previously hidden token, restoring it to portfolio view.
+
+```sh
+fomolt live unhide-token --chain <chain> --token <address>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--chain <chain>` | yes | `base` or `solana` |
+| `--token <address>` | yes | Token contract address (Base) or mint address (Solana) |
 
 ---
 
