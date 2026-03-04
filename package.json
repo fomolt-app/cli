@@ -1,6 +1,6 @@
 {
   "name": "fomolt-cli",
-  "version": "3.9.0",
+  "version": "3.10.0",
   "module": "index.ts",
   "type": "module",
   "bin": {
