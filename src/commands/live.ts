@@ -395,6 +395,52 @@ export async function handleLiveTokenMetadata(
   success(data);
 }
 
+export async function handleLiveCreatorFees(
+  opts: { chain: Chain },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const data = await client.get("/agent/live/solana/creator-fees");
+  const vault = data && typeof data === "object" && "creatorVault" in data ? (data as any).creatorVault : null;
+  const hint = vault?.hasClaimable
+    ? "Claim fees: fomolt live claim-fees -c solana"
+    : "Fees accumulate as your tokens are traded on pump.fun.";
+  successWithHint(data, hint);
+}
+
+export async function handleLiveClaimFees(
+  opts: { chain: Chain },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const data = await client.post("/agent/live/solana/creator-fees", {});
+  successWithHint(data, "Check balance: fomolt live balance -c solana");
+}
+
+export async function handleLiveDeploy(
+  opts: { chain: Chain; name: string; symbol: string; description: string; image: string; amount: string; twitter?: string; telegram?: string; website?: string; note?: string },
+  ctx: CmdContext
+): Promise<void> {
+  const client = await getAuthClient(ctx);
+  const body: Record<string, string> = {
+    name: opts.name,
+    symbol: opts.symbol,
+    description: opts.description,
+    imageUrl: opts.image,
+    amountSol: opts.amount,
+  };
+  if (opts.twitter) body.twitter = opts.twitter;
+  if (opts.telegram) body.telegram = opts.telegram;
+  if (opts.website) body.website = opts.website;
+  if (opts.note) body.note = opts.note;
+  const data = await client.post("/agent/live/solana/deploy", body);
+  const mintAddr = data && typeof data === "object" && "deploy" in data ? (data as any).deploy?.mintAddress : undefined;
+  const hint = mintAddr
+    ? `Check portfolio: fomolt live portfolio --chain solana\nToken info: fomolt token info --chain solana --token ${mintAddr}`
+    : "Check portfolio: fomolt live portfolio --chain solana";
+  successWithHint(data, hint);
+}
+
 export function liveCommands(getContext: () => CmdContext): Command {
   const cmd = new Command("live").description(
     "Live on-chain trading on Base & Solana"
@@ -600,6 +646,74 @@ export function liveCommands(getContext: () => CmdContext): Command {
     .action(async (opts) => {
       const chain = validateChain(opts.chain);
       return handleLivePerformance({ chain }, getContext());
+    });
+
+  cmd
+    .command("deploy")
+    .description("Deploy a new PumpFun token with an initial buy (Solana only)")
+    .requiredOption("-c, --chain <chain>", "Chain: solana")
+    .requiredOption("--name <name>", "Token name (1-32 chars)")
+    .requiredOption("--symbol <symbol>", "Token symbol (1-10 chars)")
+    .requiredOption("--description <desc>", "Token description (1-500 chars)")
+    .requiredOption("--image <url>", "Public HTTPS image URL for the token")
+    .requiredOption("--amount <sol>", "SOL for the initial buy (0.01-10)")
+    .option("--twitter <url>", "Twitter/X profile URL")
+    .option("--telegram <url>", "Telegram group URL")
+    .option("--website <url>", "Website URL")
+    .option("--note <text>", "Deploy note")
+    .addHelpText("after", '\nExamples:\n  fomolt live deploy -c solana --name "My Token" --symbol "MTK" --description "A cool token" --image "https://example.com/logo.png" --amount 0.5')
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      if (chain !== "solana") {
+        error("Token deployment is only available on Solana", "INVALID_CHAIN");
+        process.exit(1);
+      }
+      if (!opts.name || opts.name.length > 32) {
+        error("--name must be 1-32 characters", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (!opts.symbol || opts.symbol.length > 10) {
+        error("--symbol must be 1-10 characters", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (!opts.description || opts.description.length > 500) {
+        error("--description must be 1-500 characters", "INVALID_ARGS");
+        process.exit(1);
+      }
+      if (!opts.image || !opts.image.startsWith("https://")) {
+        error("--image must be a public HTTPS URL", "INVALID_ARGS");
+        process.exit(1);
+      }
+      const amount = validatePositiveNumber(opts.amount, "--amount");
+      validateSolanaMinTrade(amount);
+      if (opts.note) validateNote(opts.note);
+      return handleLiveDeploy({ ...opts, chain }, getContext());
+    });
+
+  cmd
+    .command("creator-fees")
+    .description("Check claimable PumpFun creator fees (Solana only)")
+    .requiredOption("-c, --chain <chain>", "Chain: solana")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      if (chain !== "solana") {
+        error("Creator fees are only available on Solana", "INVALID_CHAIN");
+        process.exit(1);
+      }
+      return handleLiveCreatorFees({ chain }, getContext());
+    });
+
+  cmd
+    .command("claim-fees")
+    .description("Claim all PumpFun creator fees (Solana only)")
+    .requiredOption("-c, --chain <chain>", "Chain: solana")
+    .action(async (opts) => {
+      const chain = validateChain(opts.chain);
+      if (chain !== "solana") {
+        error("Creator fees are only available on Solana", "INVALID_CHAIN");
+        process.exit(1);
+      }
+      return handleLiveClaimFees({ chain }, getContext());
     });
 
   // ── Bridge subcommands ──
